@@ -106,40 +106,59 @@ body {
 
 /* Layout */
 #main-wrapper {
-    width: 100%;
-    max-width: 450px;
-    /* Mobile width */
-    height: 90vh;
-    /* Fallback */
-    height: 100dvh;
-    /* Dynamic viewport height for mobile */
     display: flex;
-    background: radial-gradient(circle at center, #2a2a2a, #111);
-    box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
-    border-radius: 20px;
+    flex-direction: column;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    margin: 0;
+    padding: 0;
+    max-width: 600px;
+    /* Slightly wider tablet support/mobile defaults */
+    margin: 0 auto;
+    background: #222;
     overflow: hidden;
 }
 
-#game-area {
-    flex: 6;
+/* Header is just a block, height auto */
+
+/* Important: Sandbag Container fills space */
+#sandbag-container {
+    flex: 1;
+    /* Grow */
     display: flex;
-    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    /* Align to top */
+    padding-top: 50px;
+    /* Add spacing from header */
     position: relative;
-    border-right: 2px solid #333;
+    min-height: 0;
+    width: 100%;
+    margin: 0 !important;
 }
 
-#side-panel {
-    flex: 4;
-    background: var(--ui-bg);
-    display: flex;
-    flex-direction: column;
-    padding: 20px;
-    gap: 20px;
-    min-width: 380px;
-    /* Slightly wider for 4 slots */
-    overflow-y: auto;
-    /* Scroll if needed */
+/* Bottom Section Wrapper */
+#footer-section {
+    flex: 0 0 auto;
+    /* Fixed height based on content */
+    width: 100%;
+    background: #151515;
+    z-index: 10;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.5);
 }
+
+/* Legacy overrides */
+#game-area {
+    display: contents;
+}
+
+/* Remove wrapper effect if tag remains */
+#side-panel {
+    display: none;
+}
+
+/* Remove old desktop side panel */
 
 header {
     padding: 20px;
@@ -1050,14 +1069,19 @@ h1 {
 #sandbag-container {
     flex-grow: 1;
     width: 100%;
-    padding-top: 20px;
+    /* Force alignment to TOP */
     align-items: flex-start;
-    /* Move sandbag up */
     justify-content: center;
+    padding-top: 0;
+    /* Remove padding to let it go as high as possible */
+    margin-top: -20px;
+    /* Pull it up slightly under header if needed */
 }
 
 #sandbag {
     transform: scale(0.9);
+    margin-top: 0;
+    /* Reset any margin */
 }
 
 /* INTEGRATED HP BAR (HEADBAND) */
@@ -1083,8 +1107,8 @@ h1 {
 
 /* BOTTOM HALF: 3 COLUMNS */
 #bottom-panel {
-    height: 45vh;
-    /* Bottom 45% */
+    height: 40vh;
+    /* User request: 40% */
     width: 100%;
     background: #222;
     display: flex;
@@ -1138,19 +1162,23 @@ h3 {
 }
 
 #equipment-slots {
+    display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 5px;
+    align-items: center;
     overflow-y: auto;
     height: 100%;
+    padding-top: 5px;
 }
 
 #equipment-slots .slot {
-    width: 100%;
+    width: 70%;
+    /* User request: 70% size */
     aspect-ratio: 1/1;
     background: #252525;
     border: 1px solid #444;
     position: relative;
-    /* For silhouette */
+    border-radius: 4px;
 }
 
 /* Silhouette for Empty Slots (High Contrast) */
@@ -1194,19 +1222,24 @@ h3 {
 #inventory-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    grid-template-rows: repeat(5, 1fr);
+    grid-auto-rows: min-content;
+    /* Don't stretch rows, use content size */
+    /* Fixed 20 slots */
     width: 100%;
     flex-grow: 1;
     gap: 2px;
     padding: 2px;
-    overflow: hidden;
+    overflow-y: auto;
 }
 
 /* Shared Slot Styles for Inventory AND Drops */
 #inventory-grid .slot,
 #ground-items .slot {
     width: 100%;
-    height: 100%;
+    height: auto;
+    /* Remove 100% height to prevent stretching */
+    aspect-ratio: 1 / 1;
+    /* Force Square strictly */
     background: #333;
     /* Grid Background */
     border: 1px solid #444;
@@ -1233,12 +1266,12 @@ h3 {
 #ground-items {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    grid-template-rows: repeat(5, 1fr);
-    /* 4x5 Fixed Grid */
+    grid-auto-rows: min-content;
+    /* Don't stretch */
     gap: 2px;
     width: 100%;
     flex-grow: 1;
-    overflow: hidden;
+    overflow-y: auto;
     padding: 2px;
 }
 

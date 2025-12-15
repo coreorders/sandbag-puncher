@@ -14,69 +14,71 @@
         <!-- Floating Mobile Menu Button (Removed, layout is now permanent) -->
 
         <!-- TOP SECTION: Game Area -->
-        <section id="game-area">
-            <header>
-                <!-- Player Info (Moved to Top) -->
-                <div id="char-info">
-                    <span id="char-level">Lv.1</span>
-                    <span id="gold-display-top" style="margin-left:10px; color:#ffd700; font-size:0.9rem;">0 G</span>
-                    <button id="btn-mute"
-                        style="margin-left:auto; background:none; border:none; font-size:1.2rem; cursor:pointer;">🔊</button>
-                    <button id="btn-settings"
-                        style="margin-left:10px; background:none; border:none; font-size:1.2rem; cursor:pointer;">⚙️</button>
-                    <div id="xp-bar-container">
-                        <div id="xp-bar"></div>
-                    </div>
+        <!-- section id="game-area" removed to flatten layout -->
+        <header>
+            <!-- Player Info (Moved to Top) -->
+            <div id="char-info">
+                <span id="char-level">Lv.1</span>
+                <span id="gold-display-top" style="margin-left:10px; color:#ffd700; font-size:0.9rem;">0 G</span>
+                <button id="btn-mute"
+                    style="margin-left:auto; background:none; border:none; font-size:1.2rem; cursor:pointer;">🔊</button>
+                <button id="btn-settings"
+                    style="margin-left:10px; background:none; border:none; font-size:1.2rem; cursor:pointer;">⚙️</button>
+                <div id="xp-bar-container">
+                    <div id="xp-bar"></div>
                 </div>
-
-                <h1>샌드백 키우기</h1> <!-- Title hidden on mobile -->
-
-                <div id="score-board">
-                    <div class="stat">
-                        <span class="label">데미지</span>
-                        <span id="score">0</span>
-                    </div>
-                    <div class="stat">
-                        <span class="label">초당 데미지</span>
-                        <span id="dps">0</span>
-                    </div>
-                </div>
-                <!-- Controls -->
-                <div id="sandbag-controls">
-                    <button class="lvl-btn" data-change="-100">-100</button>
-                    <button class="lvl-btn" data-change="-10">-10</button>
-                    <button class="lvl-btn" id="btn-prev-lvl">◀</button>
-                    <span id="sandbag-level-display">샌드백 Lv.1</span>
-                    <button class="lvl-btn" id="btn-next-lvl">▶</button>
-                    <button class="lvl-btn" data-change="10">+10</button>
-                    <button class="lvl-btn" data-change="100">+100</button>
-                </div>
-                <button id="btn-boss" class="boss-btn">☠️ 보스 도전 ☠️</button>
-            </header>
-
-            <div id="sandbag-container">
-                <div id="sandbag">
-                    <!-- HP Bar Integrated into Sandbag -->
-                    <div id="hp-bar-container" class="headband">
-                        <div id="hp-bar"></div>
-                        <span id="hp-text">100/100</span>
-                    </div>
-
-                    <div class="face">
-                        <div class="eye left">
-                            <div class="pupil"></div>
-                        </div>
-                        <div class="eye right">
-                            <div class="pupil"></div>
-                        </div>
-                        <div class="mouth"></div>
-                        <div class="cheeks"></div>
-                    </div>
-                </div>
-                <div id="damage-container"></div>
-                <div id="minion-container"></div>
             </div>
 
+            <h1>샌드백 키우기</h1> <!-- Title hidden on mobile -->
+
+            <div id="score-board">
+                <div class="stat">
+                    <span class="label">데미지</span>
+                    <span id="score">0</span>
+                </div>
+                <div class="stat">
+                    <span class="label">초당 데미지</span>
+                    <span id="dps">0</span>
+                </div>
+            </div>
+            <!-- Controls -->
+            <div id="sandbag-controls">
+                <button class="lvl-btn" data-change="-100">-100</button>
+                <button class="lvl-btn" data-change="-10">-10</button>
+                <button class="lvl-btn" id="btn-prev-lvl">◀</button>
+                <span id="sandbag-level-display">샌드백 Lv.1</span>
+                <button class="lvl-btn" id="btn-next-lvl">▶</button>
+                <button class="lvl-btn" data-change="10">+10</button>
+                <button class="lvl-btn" data-change="100">+100</button>
+            </div>
+            <button id="btn-boss" class="boss-btn">☠️ 보스 도전 ☠️</button>
+        </header>
+
+        <div id="sandbag-container">
+            <div id="sandbag">
+                <!-- HP Bar Integrated into Sandbag -->
+                <div id="hp-bar-container" class="headband">
+                    <div id="hp-bar"></div>
+                    <span id="hp-text">100/100</span>
+                </div>
+
+                <div class="face">
+                    <div class="eye left">
+                        <div class="pupil"></div>
+                    </div>
+                    <div class="eye right">
+                        <div class="pupil"></div>
+                    </div>
+                    <div class="mouth"></div>
+                    <div class="cheeks"></div>
+                </div>
+            </div>
+            <div id="damage-container"></div>
+            <div id="minion-container"></div>
+        </div>
+
+        <!-- BOTTOM SECTION -->
+        <div id="footer-section">
             <div style="width:95%; text-align:right; margin-top:10px; margin-bottom:2px;">
                 <span style="font-size:0.8rem; color:#aaa; margin-right:5px;">게임 설명</span>
                 <button id="btn-info-intro" class="info-btn-small">i</button>
@@ -85,129 +87,129 @@
                 <span class="label">최근 1분 통계</span>
                 <span id="dps-meter-value">0</span>
             </div>
+
+            <!-- BOTTOM SECTION: 3 Columns -->
+            <section id="bottom-panel">
+                <!-- Col 1: Equipment -->
+                <div class="b-col" id="col-equip">
+                    <h3>장비 <button id="btn-info-equip" class="info-btn-small">i</button></h3>
+                    <div id="equipment-slots">
+                        <!-- Slots generated by JS -->
+                    </div>
+                    <!-- Stats Summary Removed -->
+                </div>
+
+                <!-- Col 2: Inventory -->
+                <div class="b-col" id="col-inv">
+                    <div class="col-header">
+                        <h3>인벤 (<span id="inv-count">0</span>/20)</h3>
+                        <div class="inv-controls">
+                            <button id="btn-info-inv" class="info-btn-small">i</button>
+                            <button id="btn-open-shop">🛒</button>
+                            <div id="trash-can">🗑️</div>
+                            <label class="gold-mode"><input type="checkbox" id="gold-mode-toggle">G</label>
+                        </div>
+                    </div>
+                    <div id="inventory-grid">
+                        <!-- 20 slots generated by JS -->
+                    </div>
+                </div>
+
+                <!-- Col 3: Drops -->
+                <div class="b-col" id="col-drops">
+                    <div class="col-header">
+                        <h3>드랍 <button id="btn-info-drops" class="info-btn-small">i</button></h3>
+                        <div id="loot-filter">
+                            <label><input type="checkbox" checked data-filter="magic">M</label>
+                            <label><input type="checkbox" checked data-filter="rare">R</label>
+                            <label><input type="checkbox" checked data-filter="epic">E</label>
+                            <label><input type="checkbox" checked data-filter="legendary">L</label>
+                        </div>
+                    </div>
+                    <div id="ground-items">
+                        <!-- Drops grid -->
+                    </div>
+                </div>
+
+        </div>
         </section>
+    </div>
 
-        <!-- BOTTOM SECTION: 3 Columns -->
-        <section id="bottom-panel">
-            <!-- Col 1: Equipment -->
-            <div class="b-col" id="col-equip">
-                <h3>장비 <button id="btn-info-equip" class="info-btn-small">i</button></h3>
-                <div id="equipment-slots">
-                    <!-- Slots generated by JS -->
-                </div>
-                <!-- Stats Summary Removed -->
+    <!-- Hidden Elements (Shop, Victory, Info) -->
+    <!-- Hidden Elements (Shop, Victory, Info) -->
+    <div id="shop-modal" class="hidden">
+        <div class="shop-content">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <h3>상점 (가격: <span id="shop-cost">100</span> G)</h3>
+                <button id="btn-close-shop" class="close-btn">×</button>
             </div>
+            <div style="display:flex; gap:10px; justify-content:center;">
+                <button id="btn-buy-weapon" class="game-btn">무기 구매</button>
+                <button id="btn-buy-ring" class="game-btn">반지 구매</button>
+            </div>
+            <div id="gold-display" style="color:gold; font-weight:bold; text-align:center; margin-top:10px;">0 G
+            </div>
+        </div>
+    </div>
 
-            <!-- Col 2: Inventory -->
-            <div class="b-col" id="col-inv">
-                <div class="col-header">
-                    <h3>인벤 (<span id="inv-count">0</span>/20)</h3>
-                    <div class="inv-controls">
-                        <button id="btn-info-inv" class="info-btn-small">i</button>
-                        <button id="btn-open-shop">🛒</button>
-                        <div id="trash-can">🗑️</div>
-                        <label class="gold-mode"><input type="checkbox" id="gold-mode-toggle">G</label>
-                    </div>
-                </div>
-                <div id="inventory-grid">
-                    <!-- 20 slots generated by JS -->
-                </div>
+    <!-- Generic Info Modal Structure (Reused for all info popups) -->
+    <div id="generic-modal" class="hidden">
+        <div class="shop-content" style="max-width:400px; text-align:left;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <h3 id="modal-title">정보</h3>
+                <button id="btn-close-generic" class="close-btn">×</button>
             </div>
+            <div id="modal-body" style="font-size:0.85rem; line-height:1.5; color:#ddd; white-space:pre-wrap;">
+            </div>
+        </div>
+    </div>
 
-            <!-- Col 3: Drops -->
-            <div class="b-col" id="col-drops">
-                <div class="col-header">
-                    <h3>드랍 <button id="btn-info-drops" class="info-btn-small">i</button></h3>
-                    <div id="loot-filter">
-                        <label><input type="checkbox" checked data-filter="magic">M</label>
-                        <label><input type="checkbox" checked data-filter="rare">R</label>
-                        <label><input type="checkbox" checked data-filter="epic">E</label>
-                        <label><input type="checkbox" checked data-filter="legendary">L</label>
-                    </div>
-                </div>
-                <div id="ground-items">
-                    <!-- Drops grid -->
-                </div>
+    <div id="settings-modal" class="hidden">
+        <div class="shop-content">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <h3>설정</h3>
+                <button id="btn-close-settings" class="close-btn">×</button>
             </div>
+            <div style="text-align:center; display:flex; gap:10px; justify-content:center; flex-direction:column;">
+                <button id="btn-manual-save" class="game-btn" style="background:#228822; width:100%;">저장하기</button>
+                <button id="btn-manual-load" class="game-btn" style="background:#884422; width:100%;">불러오기</button>
+                <hr style="width:100%; border-color:#444; margin:10px 0;">
+                <button id="btn-info-credits" class="game-btn" style="background:#444; font-size:0.8rem;">제작자
+                    정보</button>
+            </div>
+        </div>
+    </div>
 
-            <!-- Hidden Elements (Shop, Victory, Info) -->
-            <!-- Hidden Elements (Shop, Victory, Info) -->
-            <div id="shop-modal" class="hidden">
-                <div class="shop-content">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                        <h3>상점 (가격: <span id="shop-cost">100</span> G)</h3>
-                        <button id="btn-close-shop" class="close-btn">×</button>
-                    </div>
-                    <div style="display:flex; gap:10px; justify-content:center;">
-                        <button id="btn-buy-weapon" class="game-btn">무기 구매</button>
-                        <button id="btn-buy-ring" class="game-btn">반지 구매</button>
-                    </div>
-                    <div id="gold-display" style="color:gold; font-weight:bold; text-align:center; margin-top:10px;">0 G
-                    </div>
-                </div>
+    <div id="info-modal" class="hidden">
+        <div class="shop-content">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <h3>게임 정보</h3>
+                <button id="btn-close-info" class="close-btn">×</button>
             </div>
+            <div style="text-align:center; line-height:1.6; font-size:0.9rem; color:#ccc;">
+                <p>제작자 : 민대식</p>
+                <p>마지막 업데이트 : 2025년 12월 15일</p>
+                <p>버그 및 유닉아이디어제보 :<br>ddokddogi@gmail.com</p>
+            </div>
+        </div>
+    </div>
 
-            <!-- Generic Info Modal Structure (Reused for all info popups) -->
-            <div id="generic-modal" class="hidden">
-                <div class="shop-content" style="max-width:400px; text-align:left;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                        <h3 id="modal-title">정보</h3>
-                        <button id="btn-close-generic" class="close-btn">×</button>
-                    </div>
-                    <div id="modal-body" style="font-size:0.85rem; line-height:1.5; color:#ddd; white-space:pre-wrap;">
-                    </div>
-                </div>
+    <div id="victory-overlay" class="hidden">
+        <div class="victory-content">
+            <h1>승리!</h1>
+            <p>악마 샌드백을 처치했습니다!</p>
+            <div class="stat-box">
+                <div>시간: <span id="victory-time">0s</span></div>
+                <div>총 데미지: <span id="victory-damage">0</span></div>
             </div>
-
-            <div id="settings-modal" class="hidden">
-                <div class="shop-content">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                        <h3>설정</h3>
-                        <button id="btn-close-settings" class="close-btn">×</button>
-                    </div>
-                    <div
-                        style="text-align:center; display:flex; gap:10px; justify-content:center; flex-direction:column;">
-                        <button id="btn-manual-save" class="game-btn"
-                            style="background:#228822; width:100%;">저장하기</button>
-                        <button id="btn-manual-load" class="game-btn"
-                            style="background:#884422; width:100%;">불러오기</button>
-                        <hr style="width:100%; border-color:#444; margin:10px 0;">
-                        <button id="btn-info-credits" class="game-btn" style="background:#444; font-size:0.8rem;">제작자
-                            정보</button>
-                    </div>
-                </div>
+            <button class="game-btn" onclick="location.reload()">다시 하기</button>
+            <div style="margin-top:10px;">
+                <button id="btn-continue" class="game-btn" style="background:#444; border-color:#666;">게임
+                    계속하기</button>
             </div>
-
-            <div id="info-modal" class="hidden">
-                <div class="shop-content">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                        <h3>게임 정보</h3>
-                        <button id="btn-close-info" class="close-btn">×</button>
-                    </div>
-                    <div style="text-align:center; line-height:1.6; font-size:0.9rem; color:#ccc;">
-                        <p>제작자 : 민대식</p>
-                        <p>마지막 업데이트 : 2025년 12월 15일</p>
-                        <p>버그 및 유닉아이디어제보 :<br>ddokddogi@gmail.com</p>
-                    </div>
-                </div>
-            </div>
-
-            <div id="victory-overlay" class="hidden">
-                <div class="victory-content">
-                    <h1>승리!</h1>
-                    <p>악마 샌드백을 처치했습니다!</p>
-                    <div class="stat-box">
-                        <div>시간: <span id="victory-time">0s</span></div>
-                        <div>총 데미지: <span id="victory-damage">0</span></div>
-                    </div>
-                    <button class="game-btn" onclick="location.reload()">다시 하기</button>
-                    <div style="margin-top:10px;">
-                        <button id="btn-continue" class="game-btn" style="background:#444; border-color:#666;">게임
-                            계속하기</button>
-                    </div>
-                </div>
-            </div>
-        </section>
+        </div>
+    </div>
+    </section>
     </div>
     <script src="script_v3.js"></script>
 </body>
