@@ -963,10 +963,16 @@ body {
 
 #main-wrapper {
     flex-direction: column;
-    border-radius: 0;
+    border-radius: 20px;
+    /* Phone look */
     height: 100dvh;
+    max-height: 900px;
+    /* Limit height on big screens */
     width: 100%;
-    max-width: none;
+    max-width: 450px !important;
+    /* Force constraint */
+    margin: 0 auto;
+    /* Center it */
 }
 
 /* TOP HALF: SANDBAG */
