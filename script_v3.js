@@ -377,7 +377,10 @@ class Game {
 
         this.gold = 0;
         this.goldMode = false;
+        this.goldMode = false;
         this.lastTotalDmg = 10;
+        this.damageHistory = [];
+        this.storageKey = 'sb_save_v1';
 
         // Drag State
         this.draggingItemIdx = null;
@@ -424,9 +427,15 @@ class Game {
         document.getElementById('btn-close-shop').onclick = () => shopModal.classList.add('hidden');
 
         // Info UI
+        // Settings UI
+        const settingsModal = document.getElementById('settings-modal');
+        document.getElementById('btn-settings').onclick = () => settingsModal.classList.remove('hidden');
+        document.getElementById('btn-close-settings').onclick = () => settingsModal.classList.add('hidden');
+
+        // Info UI (Credits Only now)
         const infoModal = document.getElementById('info-modal');
         if (infoModal) {
-            document.getElementById('btn-info').onclick = () => infoModal.classList.remove('hidden');
+            document.getElementById('btn-info-credits').onclick = () => infoModal.classList.remove('hidden');
             document.getElementById('btn-close-info').onclick = () => infoModal.classList.add('hidden');
         }
 
@@ -539,6 +548,22 @@ class Game {
         document.addEventListener('mouseout', e => { if (e.target.closest('[data-tooltip-html]')) this.tooltip.style.display = 'none'; });
 
         this.initSlots();
+
+        // New Feature Listeners
+        const btnSave = document.getElementById('btn-manual-save');
+        if (btnSave) btnSave.onclick = () => this.saveGame();
+
+        const btnLoad = document.getElementById('btn-manual-load');
+        if (btnLoad) btnLoad.onclick = () => this.loadGame();
+
+        const btnContinue = document.getElementById('btn-continue');
+        if (btnContinue) btnContinue.onclick = () => this.continueGame();
+
+        document.getElementById('btn-info-equip').onclick = (e) => { e.stopPropagation(); this.showDamageInfo(); };
+        document.getElementById('btn-info-inv').onclick = (e) => { e.stopPropagation(); this.showInvInfo(); };
+        document.getElementById('btn-info-drops').onclick = (e) => { e.stopPropagation(); this.showDropInfo(); };
+        document.getElementById('btn-info-intro').onclick = (e) => { e.stopPropagation(); this.showIntroInfo(); };
+        document.getElementById('btn-close-generic').onclick = () => document.getElementById('generic-modal').classList.add('hidden');
     }
 
     initSlots() {
@@ -618,9 +643,9 @@ class Game {
             }
         }, { passive: false });
 
-        this.sandbag.addEventListener('dragstart', (e) => e.preventDefault());
         this.updateSandbagUI();
         this.updateShopUI();
+        this.checkIntro();
     }
 
     toggleDeleteMode() {
@@ -762,6 +787,7 @@ class Game {
         amount = Math.ceil(amount);
         this.damage += amount;
         this.sandbagHp -= amount;
+        this.damageHistory.push({ t: Date.now(), v: amount });
 
         if (x === null) {
             const rect = this.sandbag.getBoundingClientRect();
@@ -1259,7 +1285,10 @@ class Game {
         });
     }
 
-    updateUI() { document.getElementById('score').textContent = this.damage.toLocaleString(); }
+    updateUI() {
+        document.getElementById('score').textContent = this.damage.toLocaleString();
+        this.updateDPS();
+    }
     playPunchAnim() { this.sandbag.classList.remove('hit'); void this.sandbag.offsetWidth; this.sandbag.classList.add('hit'); playSound('hit'); }
     showDamageNumber(x, y, v, c, color) {
         const el = document.createElement('div'); el.className = `damage-text ${c ? 'crit' : ''}`; el.textContent = v;
@@ -1268,6 +1297,150 @@ class Game {
         document.body.appendChild(el); setTimeout(() => el.remove(), 800);
     }
     showProjectiles(c, x, y) { for (let i = 0; i < c; i++) { const d = document.createElement('div'); d.style.cssText = `position:absolute;width:5px;height:5px;background:#0ff;border-radius:50%;left:${x}px;top:${y}px;transition:0.5s;pointer-events:none;`; document.body.appendChild(d); requestAnimationFrame(() => { d.style.transform = `translate(${Math.cos(Math.random() * 6) * 100}px,${Math.sin(Math.random() * 6) * 100}px)`; d.style.opacity = 0; }); setTimeout(() => d.remove(), 500); } }
+    // --- New Features Logic ---
+
+    // 1. Save/Load
+    saveGame() {
+        const data = {
+            char: this.char,
+            sandbagLevel: this.sandbagLevel,
+            gold: this.gold,
+            inventory: this.inventory,
+            equipment: this.equipment,
+            filters: Array.from(document.querySelectorAll('#loot-filter input')).map(cb => ({ k: cb.dataset.filter, v: cb.checked }))
+        };
+        try {
+            localStorage.setItem(this.storageKey, JSON.stringify(data));
+            alert("저장되었습니다!");
+        } catch (e) { alert("저장 실패 (Local Storage 오류)"); }
+    }
+
+    loadGame() {
+        const str = localStorage.getItem(this.storageKey);
+        if (!str) return alert("저장된 데이터가 없습니다.");
+        try {
+            const data = JSON.parse(str);
+            // Validations
+            if (data.char) { Object.assign(this.char, data.char); document.getElementById('char-level').textContent = `Lv.${this.char.level}`; document.getElementById('xp-bar').style.width = this.char.xp / this.char.maxXp * 100 + '%'; }
+            if (data.sandbagLevel) { this.sandbagLevel = data.sandbagLevel; this.changeSandbagLevel(0); }
+            if (data.gold) { this.gold = data.gold; this.updateGoldUI(); }
+
+            // Rehydrate Items
+            const hydrate = (i) => {
+                if (!i) return null;
+                const item = new Item(i.type);
+                Object.assign(item, i);
+                return item;
+            };
+
+            if (data.inventory) { this.inventory = data.inventory.map(hydrate); this.renderInventory(); }
+            if (data.equipment) {
+                this.equipment = {
+                    weapon1: hydrate(data.equipment.weapon1),
+                    weapon2: hydrate(data.equipment.weapon2),
+                    ring1: hydrate(data.equipment.ring1),
+                    ring2: hydrate(data.equipment.ring2)
+                };
+                this.renderEquipment();
+            }
+            if (data.filters) {
+                data.filters.forEach(f => {
+                    const cb = document.querySelector(`#loot-filter input[data-filter="${f.k}"]`);
+                    if (cb) cb.checked = f.v;
+                });
+            }
+            this.renderDrops(); // Refresh filter
+            alert("불러오기 완료!");
+        } catch (e) {
+            console.error(e);
+            alert("세이브 파일이 손상되었습니다.");
+        }
+    }
+
+    // 2. Boss Continue
+    continueGame() {
+        document.getElementById('victory-overlay').classList.add('hidden');
+        this.gameRunning = true;
+        // Do not reset sandbag level
+        if (this.poisonInterval) clearInterval(this.poisonInterval);
+        if (this.skelInterval) clearInterval(this.skelInterval);
+        this.poisonInterval = setInterval(() => this.tickPoison(), 1000);
+        this.skelInterval = setInterval(() => this.skeletonShoot(), 1000);
+        this.sandbagHp = this.sandbagMaxHp;
+        this.sandbag.classList.remove('dead');
+        this.updateHpBar();
+    }
+
+    // 3. Info Popups
+    showGenericModal(title, text) {
+        const m = document.getElementById('generic-modal');
+        m.querySelector('#modal-title').textContent = title;
+        m.querySelector('#modal-body').textContent = text;
+        m.classList.remove('hidden');
+    }
+
+    showDamageInfo() {
+        const text = `1. ⚔️ 기본 공격력 (Basic Attack)
+최종 데미지는 다음 순서로 계산됩니다:
+기본 깡공 합산: (캐릭터 기본공격력) + (착용 장비 기본공격력 합계) + (랜덤 보정 10~20)
+예: 레벨업으로 오른 공격력 + 칼/반지 깡공(어처구니 포함) + 10~20 사이 랜덤 값
+퍼센트 데미지 적용: 위 값에 (1 + 물리 피해 증가% / 100)을 곱함.
+크리티컬 판정: 크리티컬 발생 시 (크리티컬 피해% / 100)을 곱함. (기본 200% = 2배)
+
+2. ☠️ 중독 데미지 (Poison Damage)
+중독은 "그 한 방의 최종 데미지"를 기준으로 들어갑니다.
+발동 조건: 기본 10% + (중독 확률%)
+초당 데미지 (DPS): (그 때 터진 최종 물리 데미지) * (중독 데미지% / 100)
+지속 시간: 3초 (기본) * (1 + 시간 증가% / 100)
+즉, 깡공이 높고 크리티컬이 터진 한 방에 중독이 묻으면, 중독 데미지도 그만큼 엄청나게 뻥튀기됩니다.`;
+        this.showGenericModal("데미지 계산 공식", text);
+    }
+
+    showInvInfo() {
+        const text = `아이템을 쓰레기통 쪽으로 드레그하면 아이템이 인벤에서 제거됩니다.
+G키를 누르면 아이템이 나오는대신 센드백 레벨에 따른 소량의 골드를 얻습니다.
+상점에서는 현재 센드백레벨과 같은 아이템을 구매하실수 있습니다.`;
+        this.showGenericModal("인벤토리 도움말", text);
+    }
+
+    showDropInfo() {
+        const text = `M R E L 체크박스를 활성화해 드랍 아이템을 필터링 하세요.
+M은 한줄짜리옵션
+R은 두줄짜리옵션
+E는 세줄짜리옵션
+L은 네줄짜리옵션 혹은 유니크아이템만 보이게 합니다.`;
+        this.showGenericModal("드랍 및 필터", text);
+    }
+
+    showIntroInfo() {
+        const text = `센드백 키우기에 오신 것을 환영합니다!
+
+센드백 레벨이 높을수록 드랍되는 템의 데미지와 골드량이 증가합니다.
+드랍되는템에는 옵션이 1~4줄로 랜덤하게 붙습니다.
+1줄은 파랑, 2줄은 노랑, 3줄은 보라, 4줄은 주황으로 표현됩니다.
+
+즐거운 시간 되세요!`;
+        this.showGenericModal("게임 설명", text);
+    }
+
+    checkIntro() {
+        if (!localStorage.getItem('sb_intro_shown_v1')) {
+            this.showIntroInfo();
+            localStorage.setItem('sb_intro_shown_v1', 'true');
+        }
+    }
+
+    // 4. DPS Meter
+    updateDPS() {
+        const now = Date.now();
+        // Remove entries older than 60s
+        while (this.damageHistory.length > 0 && this.damageHistory[0].t < now - 60000) {
+            this.damageHistory.shift();
+        }
+        // Sum
+        const total = this.damageHistory.reduce((s, x) => s + x.v, 0);
+        document.getElementById('dps-meter-value').textContent = total.toLocaleString();
+    }
 }
 
 window.addEventListener('DOMContentLoaded', () => new Game());

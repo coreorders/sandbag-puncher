@@ -196,6 +196,7 @@ h1 {
     box-shadow: inset -10px -10px 20px rgba(0, 0, 0, 0.3), inset 10px 10px 20px rgba(255, 255, 255, 0.1), 0 10px 20px rgba(0, 0, 0, 0.5);
     transform-origin: top center;
     transition: transform 0.05s ease;
+    margin-top: 50px;
 }
 
 #sandbag::before {
@@ -1307,7 +1308,9 @@ h3 {
 /* Shop Modal Centered */
 /* Shop & Info Modal Centered */
 #shop-modal,
-#info-modal {
+#info-modal,
+#generic-modal,
+#settings-modal {
     position: fixed;
     width: 80%;
     /* Slightly smaller for popup feel */
@@ -1345,3 +1348,73 @@ h3 {
 }
 
 /* Mobile UI Universal End */
+
+/* New Features CSS */
+
+/* DPS Meter */
+#dps-meter-container {
+    width: 95%;
+    background: #333;
+    border: 1px solid #555;
+    padding: 5px 10px;
+    border-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+    margin-top: auto;
+    /* Push to bottom of Game Area */
+    min-height: 30px;
+    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.3);
+}
+
+#dps-meter-value {
+    color: #ff5555;
+    font-weight: bold;
+    font-size: 1.1rem;
+    text-shadow: 1px 1px 0 #000;
+}
+
+/* Info Buttons */
+.info-btn-small {
+    background: #0077ff;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    vertical-align: middle;
+    margin-left: 5px;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    line-height: 1;
+}
+
+.info-btn-small:hover {
+    background: #0099ff;
+}
+
+/* Close Btn */
+.close-btn {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 1.5rem;
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+}
+
+.close-btn:hover {
+    color: #f00;
+}
+
+/* Modal Body Text */
+#modal-body {
+    white-space: pre-wrap;
+    /* Preserve newlines */
+    text-align: left;
+}
