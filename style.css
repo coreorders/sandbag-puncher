@@ -107,7 +107,8 @@ body {
 /* Layout */
 #main-wrapper {
     width: 100%;
-    max-width: 900px;
+    max-width: 450px;
+    /* Mobile width */
     height: 90vh;
     /* Fallback */
     height: 100dvh;
@@ -954,369 +955,370 @@ h1 {
 }
 
 /* ---- MEDIA QUERIES FOR MOBILE (Revised 3-Column) ---- */
-@media screen and (max-width: 768px) {
-    body {
-        overflow: hidden;
-    }
-
-    #main-wrapper {
-        flex-direction: column;
-        border-radius: 0;
-        height: 100dvh;
-        width: 100%;
-        max-width: none;
-    }
-
-    /* TOP HALF: SANDBAG */
-    #game-area {
-        height: 55vh;
-        /* Top 55% */
-        flex: none;
-        width: 100%;
-        border-bottom: 2px solid #555;
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-
-    header {
-        padding: 5px;
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 5px;
-    }
-
-    h1 {
-        display: none;
-    }
-
-    /* Hide Title */
-
-    /* Player Info Top */
-    #char-info {
-        font-size: 0.9rem;
-        flex-direction: row;
-        gap: 10px;
-        margin: 0;
-        position: static;
-        transform: none;
-        background: none;
-        width: auto;
-        /* Reset old styles */
-    }
-
-    #xp-bar-container {
-        width: 100px;
-        height: 6px;
-        margin: 0;
-    }
-
-    #score-board {
-        gap: 10px;
-        margin-bottom: 5px;
-    }
-
-    .stat .label {
-        font-size: 0.6rem;
-    }
-
-    #score,
-    #dps {
-        font-size: 1rem;
-    }
-
-    #sandbag-controls {
-        transform: scale(0.85);
-        margin: 0;
-    }
-
-    #btn-boss {
-        padding: 2px 8px;
-        font-size: 0.8rem;
-    }
-
-    #sandbag-container {
-        flex-grow: 1;
-        width: 100%;
-        padding-top: 20px;
-        align-items: flex-start;
-        /* Move sandbag up */
-        justify-content: center;
-    }
-
-    #sandbag {
-        transform: scale(0.9);
-    }
-
-    /* INTEGRATED HP BAR (HEADBAND) */
-    #hp-bar-container.headband {
-        position: absolute;
-        top: 25px;
-        /* Forehead position */
-        left: 50%;
-        transform: translateX(-50%);
-        width: 90%;
-        height: 12px;
-        z-index: 5;
-        border: 2px solid #222;
-        border-radius: 5px;
-        background: #333;
-        margin: 0;
-    }
-
-    #hp-text {
-        font-size: 0.6rem;
-        line-height: 12px;
-    }
-
-    /* BOTTOM HALF: 3 COLUMNS */
-    #bottom-panel {
-        height: 45vh;
-        /* Bottom 45% */
-        width: 100%;
-        background: #222;
-        display: flex;
-        overflow: hidden;
-    }
-
-    .b-col {
-        border-right: 1px solid #444;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding: 2px;
-    }
-
-    .inv-controls {
-        display: flex;
-        gap: 5px;
-        align-items: center;
-        flex-wrap: nowrap;
-        /* Force single line */
-    }
-
-    #btn-open-shop,
-    #trash-can {
-        font-size: 0.9rem;
-        padding: 2px 5px;
-        /* Add horizontal padding */
-        white-space: nowrap;
-    }
-
-    .gold-mode {
-        font-size: 0.6rem;
-        display: flex;
-        align-items: center;
-        white-space: nowrap;
-    }
-
-    h3 {
-        margin: 2px 0;
-        font-size: 0.8rem;
-        color: #aaa;
-        text-align: center;
-    }
-
-    /* COL 1: EQUIP (Fixed Width) */
-    #col-equip {
-        flex: 0 0 13%;
-        /* Reduced further */
-        background: #1a1a1a;
-        min-width: 0;
-    }
-
-    #equipment-slots {
-        flex-direction: column;
-        gap: 2px;
-        overflow-y: auto;
-        height: 100%;
-    }
-
-    #equipment-slots .slot {
-        width: 100%;
-        aspect-ratio: 1/1;
-        background: #252525;
-        border: 1px solid #444;
-        position: relative;
-        /* For silhouette */
-    }
-
-    /* Silhouette for Empty Slots (High Contrast) */
-    .weapon-slot .slot-content:empty::before {
-        content: '🗡️';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        font-size: 1.5rem;
-        opacity: 0.5;
-        pointer-events: none;
-        filter: grayscale(100%);
-    }
-
-    .ring-slot .slot-content:empty::before {
-        content: '💍';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        font-size: 1.5rem;
-        opacity: 0.5;
-        pointer-events: none;
-        filter: grayscale(100%);
-    }
-
-    /* COL 2: INVENTORY (Fixed Width) */
-    #col-inv {
-        flex: 0 0 42%;
-        /* Reduced further */
-        background: #252525;
-        display: flex;
-        flex-direction: column;
-        min-width: 0;
-        border-right: 1px solid #444;
-    }
-
-    /* ... (headers unchanged) ... */
-
-    #inventory-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        grid-template-rows: repeat(5, 1fr);
-        width: 100%;
-        flex-grow: 1;
-        gap: 2px;
-        padding: 2px;
-        overflow: hidden;
-    }
-
-    /* Shared Slot Styles for Inventory AND Drops */
-    #inventory-grid .slot,
-    #ground-items .slot {
-        width: 100%;
-        height: 100%;
-        background: #333;
-        /* Grid Background */
-        border: 1px solid #444;
-        /* Grid Border */
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        overflow: hidden;
-    }
-
-    /* COL 3: DROPS (Fixed Width) */
-    #col-drops {
-        flex: 0 0 42%;
-        /* Reduced further */
-        background: #1e1e1e;
-        border-right: none;
-        display: flex;
-        flex-direction: column;
-        min-width: 0;
-    }
-
-    /* ... (filters unchanged) ... */
-
-    #ground-items {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        grid-template-rows: repeat(5, 1fr);
-        /* 4x5 Fixed Grid */
-        gap: 2px;
-        width: 100%;
-        flex-grow: 1;
-        overflow: hidden;
-        padding: 2px;
-    }
-
-    .ground-item {
-        font-size: 1.5rem;
-        background: #2a2a2a;
-        width: 100%;
-        height: 100%;
-        /* Fill slot */
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        border: 2px solid #555;
-        /* Default solid border */
-        box-sizing: border-box;
-    }
-
-    /* Rarity Border Colors (Solid & Bold) */
-    .ground-item.magic {
-        border-color: #3b82f6;
-    }
-
-    /* Blue */
-    .ground-item.rare {
-        border-color: #eab308;
-    }
-
-    /* Yellow */
-    .ground-item.epic {
-        border-color: #a855f7;
-    }
-
-    /* Purple */
-    .ground-item.legendary {
-        border-color: #ef4444;
-    }
-
-    /* Red */
-    .ground-item.unique {
-        border-color: #ec4899;
-        box-shadow: 0 0 5px #ec4899;
-    }
-
-    /* Pink + Glow */
-
-    /* Also apply to inventory items for consistency if desired, or keep as is */
-    .item.magic {
-        border: 1px solid #3b82f6;
-    }
-
-    .item.rare {
-        border: 1px solid #eab308;
-    }
-
-    .item.epic {
-        border: 1px solid #a855f7;
-    }
-
-    .item.legendary {
-        border: 1px solid #ef4444;
-    }
-
-    .item.unique {
-        border: 1px solid #ec4899;
-    }
-
-    /* Shop Modal Centered */
-    /* Shop & Info Modal Centered */
-    #shop-modal,
-    #info-modal {
-        position: fixed;
-        width: 80%;
-        /* Slightly smaller for popup feel */
-        max-width: 300px;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        /* True Center */
-        background: #222;
-        /* Ensure background */
-        border: 2px solid #555;
-        border-radius: 10px;
-        padding: 10px;
-        z-index: 2000;
-        box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
-    }
+/* Mobile Defaults Enforced */
+/* @media screen and (max-width: 768px) { REMOVED */
+body {
+    overflow: hidden;
 }
+
+#main-wrapper {
+    flex-direction: column;
+    border-radius: 0;
+    height: 100dvh;
+    width: 100%;
+    max-width: none;
+}
+
+/* TOP HALF: SANDBAG */
+#game-area {
+    height: 55vh;
+    /* Top 55% */
+    flex: none;
+    width: 100%;
+    border-bottom: 2px solid #555;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+header {
+    padding: 5px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+h1 {
+    display: none;
+}
+
+/* Hide Title */
+
+/* Player Info Top */
+#char-info {
+    font-size: 0.9rem;
+    flex-direction: row;
+    gap: 10px;
+    margin: 0;
+    position: static;
+    transform: none;
+    background: none;
+    width: auto;
+    /* Reset old styles */
+}
+
+#xp-bar-container {
+    width: 100px;
+    height: 6px;
+    margin: 0;
+}
+
+#score-board {
+    gap: 10px;
+    margin-bottom: 5px;
+}
+
+.stat .label {
+    font-size: 0.6rem;
+}
+
+#score,
+#dps {
+    font-size: 1rem;
+}
+
+#sandbag-controls {
+    transform: scale(0.85);
+    margin: 0;
+}
+
+#btn-boss {
+    padding: 2px 8px;
+    font-size: 0.8rem;
+}
+
+#sandbag-container {
+    flex-grow: 1;
+    width: 100%;
+    padding-top: 20px;
+    align-items: flex-start;
+    /* Move sandbag up */
+    justify-content: center;
+}
+
+#sandbag {
+    transform: scale(0.9);
+}
+
+/* INTEGRATED HP BAR (HEADBAND) */
+#hp-bar-container.headband {
+    position: absolute;
+    top: 25px;
+    /* Forehead position */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    height: 12px;
+    z-index: 5;
+    border: 2px solid #222;
+    border-radius: 5px;
+    background: #333;
+    margin: 0;
+}
+
+#hp-text {
+    font-size: 0.6rem;
+    line-height: 12px;
+}
+
+/* BOTTOM HALF: 3 COLUMNS */
+#bottom-panel {
+    height: 45vh;
+    /* Bottom 45% */
+    width: 100%;
+    background: #222;
+    display: flex;
+    overflow: hidden;
+}
+
+.b-col {
+    border-right: 1px solid #444;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2px;
+}
+
+.inv-controls {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    flex-wrap: nowrap;
+    /* Force single line */
+}
+
+#btn-open-shop,
+#trash-can {
+    font-size: 0.9rem;
+    padding: 2px 5px;
+    /* Add horizontal padding */
+    white-space: nowrap;
+}
+
+.gold-mode {
+    font-size: 0.6rem;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
+h3 {
+    margin: 2px 0;
+    font-size: 0.8rem;
+    color: #aaa;
+    text-align: center;
+}
+
+/* COL 1: EQUIP (Fixed Width) */
+#col-equip {
+    flex: 0 0 13%;
+    /* Reduced further */
+    background: #1a1a1a;
+    min-width: 0;
+}
+
+#equipment-slots {
+    flex-direction: column;
+    gap: 2px;
+    overflow-y: auto;
+    height: 100%;
+}
+
+#equipment-slots .slot {
+    width: 100%;
+    aspect-ratio: 1/1;
+    background: #252525;
+    border: 1px solid #444;
+    position: relative;
+    /* For silhouette */
+}
+
+/* Silhouette for Empty Slots (High Contrast) */
+.weapon-slot .slot-content:empty::before {
+    content: '🗡️';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.5rem;
+    opacity: 0.5;
+    pointer-events: none;
+    filter: grayscale(100%);
+}
+
+.ring-slot .slot-content:empty::before {
+    content: '💍';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.5rem;
+    opacity: 0.5;
+    pointer-events: none;
+    filter: grayscale(100%);
+}
+
+/* COL 2: INVENTORY (Fixed Width) */
+#col-inv {
+    flex: 0 0 42%;
+    /* Reduced further */
+    background: #252525;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    border-right: 1px solid #444;
+}
+
+/* ... (headers unchanged) ... */
+
+#inventory-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+    width: 100%;
+    flex-grow: 1;
+    gap: 2px;
+    padding: 2px;
+    overflow: hidden;
+}
+
+/* Shared Slot Styles for Inventory AND Drops */
+#inventory-grid .slot,
+#ground-items .slot {
+    width: 100%;
+    height: 100%;
+    background: #333;
+    /* Grid Background */
+    border: 1px solid #444;
+    /* Grid Border */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+/* COL 3: DROPS (Fixed Width) */
+#col-drops {
+    flex: 0 0 42%;
+    /* Reduced further */
+    background: #1e1e1e;
+    border-right: none;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+/* ... (filters unchanged) ... */
+
+#ground-items {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+    /* 4x5 Fixed Grid */
+    gap: 2px;
+    width: 100%;
+    flex-grow: 1;
+    overflow: hidden;
+    padding: 2px;
+}
+
+.ground-item {
+    font-size: 1.5rem;
+    background: #2a2a2a;
+    width: 100%;
+    height: 100%;
+    /* Fill slot */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 2px solid #555;
+    /* Default solid border */
+    box-sizing: border-box;
+}
+
+/* Rarity Border Colors (Solid & Bold) */
+.ground-item.magic {
+    border-color: #3b82f6;
+}
+
+/* Blue */
+.ground-item.rare {
+    border-color: #eab308;
+}
+
+/* Yellow */
+.ground-item.epic {
+    border-color: #a855f7;
+}
+
+/* Purple */
+.ground-item.legendary {
+    border-color: #ef4444;
+}
+
+/* Red */
+.ground-item.unique {
+    border-color: #ec4899;
+    box-shadow: 0 0 5px #ec4899;
+}
+
+/* Pink + Glow */
+
+/* Also apply to inventory items for consistency if desired, or keep as is */
+.item.magic {
+    border: 1px solid #3b82f6;
+}
+
+.item.rare {
+    border: 1px solid #eab308;
+}
+
+.item.epic {
+    border: 1px solid #a855f7;
+}
+
+.item.legendary {
+    border: 1px solid #ef4444;
+}
+
+.item.unique {
+    border: 1px solid #ec4899;
+}
+
+/* Shop Modal Centered */
+/* Shop & Info Modal Centered */
+#shop-modal,
+#info-modal {
+    position: fixed;
+    width: 80%;
+    /* Slightly smaller for popup feel */
+    max-width: 300px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    /* True Center */
+    background: #222;
+    /* Ensure background */
+    border: 2px solid #555;
+    border-radius: 10px;
+    padding: 10px;
+    z-index: 2000;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+}
+
 
 /* CSS Utility: Force Hide */
 .hidden {
@@ -1336,4 +1338,4 @@ h1 {
     -webkit-user-select: none;
 }
 
-/* Desktop Defaults Removed - Mobile UI is now universal */
+/* Mobile UI Universal End */
