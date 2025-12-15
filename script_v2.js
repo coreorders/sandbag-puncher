@@ -289,6 +289,13 @@ class Game {
         document.getElementById('btn-open-shop').onclick = () => shopModal.classList.remove('hidden');
         document.getElementById('btn-close-shop').onclick = () => shopModal.classList.add('hidden');
 
+        // Info UI
+        const infoModal = document.getElementById('info-modal');
+        if (infoModal) {
+            document.getElementById('btn-info').onclick = () => infoModal.classList.remove('hidden');
+            document.getElementById('btn-close-info').onclick = () => infoModal.classList.add('hidden');
+        }
+
         // Mobile Panel Toggle Check (Removed logic, just loop)
         const mobileToggle = document.getElementById('mobile-panel-toggle');
         const sidePanel = document.getElementById('side-panel');
@@ -397,9 +404,8 @@ class Game {
             const type = cfg.key.startsWith('weapon') ? 'weapon-slot' : 'ring-slot';
             div.className = `slot equipment-slot ${type}`;
             div.setAttribute('data-key', cfg.key);
-            // Label is hidden by default in CSS, but structure is here if enabled.
-            // User requested visual clarity: Silhouettes are primary, but labels fix ensures DOM is correct.
-            div.innerHTML = `<span class='slot-label' style='display:block; font-size:0.6rem; color:#888; text-align:center; position:absolute; bottom:2px; width:100%; pointer-events:none;'>${cfg.label}</span><div class='slot-content'></div>`;
+            // User requested visual clarity: Silhouettes are primary, labels removed.
+            div.innerHTML = `<div class='slot-content'></div>`;
 
             // Allow Drop (Equip)
             div.ondragover = (e) => e.preventDefault();
@@ -912,11 +918,6 @@ class Game {
                 div.appendChild(el);
             }
         });
-        const s = this.calculateStats();
-        // Update stats summary localization - NO DECIMALS
-        document.getElementById('stat-bonus-dmg').textContent = Math.floor(s.incDmg);
-        document.getElementById('stat-flat-dmg').textContent = Math.floor(this.char.baseDmg); // Approximation
-        document.getElementById('stat-crit-chance').textContent = Math.floor(s.critChance);
     }
 
     updateUI() { document.getElementById('score').textContent = this.damage.toLocaleString(); }

@@ -30,6 +30,9 @@
 body {
     margin: 0;
     padding: 0;
+    box-sizing: border-box;
+    /* Prevent double-tap zoom on mobile */
+    touch-action: manipulation;
     font-family: 'Do Hyeon', sans-serif;
     background-color: var(--bg-color);
     color: var(--text-color);
@@ -1048,6 +1051,29 @@ h1 {
         padding: 2px;
     }
 
+    .inv-controls {
+        display: flex;
+        gap: 5px;
+        align-items: center;
+        flex-wrap: nowrap;
+        /* Force single line */
+    }
+
+    #btn-open-shop,
+    #trash-can {
+        font-size: 0.9rem;
+        padding: 2px 5px;
+        /* Add horizontal padding */
+        white-space: nowrap;
+    }
+
+    .gold-mode {
+        font-size: 0.6rem;
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
+    }
+
     h3 {
         margin: 2px 0;
         font-size: 0.8rem;
@@ -1080,7 +1106,7 @@ h1 {
     }
 
     /* Silhouette for Empty Slots (High Contrast) */
-    .slot[data-key^="weapon"] .slot-content:empty::before {
+    .weapon-slot .slot-content:empty::before {
         content: '🗡️';
         position: absolute;
         top: 50%;
@@ -1092,7 +1118,7 @@ h1 {
         filter: grayscale(100%);
     }
 
-    .slot[data-key^="ring"] .slot-content:empty::before {
+    .ring-slot .slot-content:empty::before {
         content: '💍';
         position: absolute;
         top: 50%;
@@ -1171,59 +1197,104 @@ h1 {
     .ground-item {
         font-size: 1.5rem;
         background: #2a2a2a;
-        border: 1px dashed #444;
         width: 100%;
         height: 100%;
         /* Fill slot */
         display: flex;
         justify-content: center;
         align-items: center;
+        border: 2px solid #555;
+        /* Default solid border */
+        box-sizing: border-box;
     }
 
-    grid-template-rows: repeat(5, 1fr);
-    /* 4x5 Fixed Grid */
-    gap: 2px;
-    width: 100%;
-    flex-grow: 1;
-    overflow: hidden;
-    /* No scrolling, fixed 20 */
-    padding: 2px;
+    /* Rarity Border Colors (Solid & Bold) */
+    .ground-item.magic {
+        border-color: #3b82f6;
+    }
+
+    /* Blue */
+    .ground-item.rare {
+        border-color: #eab308;
+    }
+
+    /* Yellow */
+    .ground-item.epic {
+        border-color: #a855f7;
+    }
+
+    /* Purple */
+    .ground-item.legendary {
+        border-color: #ef4444;
+    }
+
+    /* Red */
+    .ground-item.unique {
+        border-color: #ec4899;
+        box-shadow: 0 0 5px #ec4899;
+    }
+
+    /* Pink + Glow */
+
+    /* Also apply to inventory items for consistency if desired, or keep as is */
+    .item.magic {
+        border: 1px solid #3b82f6;
+    }
+
+    .item.rare {
+        border: 1px solid #eab308;
+    }
+
+    .item.epic {
+        border: 1px solid #a855f7;
+    }
+
+    .item.legendary {
+        border: 1px solid #ef4444;
+    }
+
+    .item.unique {
+        border: 1px solid #ec4899;
+    }
+
+    /* Shop Modal Centered */
+    /* Shop & Info Modal Centered */
+    #shop-modal,
+    #info-modal {
+        position: fixed;
+        width: 80%;
+        /* Slightly smaller for popup feel */
+        max-width: 300px;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        /* True Center */
+        background: #222;
+        /* Ensure background */
+        border: 2px solid #555;
+        border-radius: 10px;
+        padding: 10px;
+        z-index: 2000;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+    }
 }
 
+/* CSS Utility: Force Hide */
+.hidden {
+    display: none !important;
+}
+
+/* CSS Utility: Force Hide */
+.hidden {
+    display: none !important;
+}
+
+/* Fix Touch Drag: Prevent browser scrolling when touching items */
+.item,
 .ground-item {
-    font-size: 1.5rem;
-    background: #2a2a2a;
-    border: 1px dashed #444;
-    width: 100%;
-    height: 100%;
-    /* Fill slot */
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
-/* Shop Modal Centered */
-#shop-modal {
-    position: fixed;
-    width: 90%;
-    top: 30%;
-    left: 50%;
-}
-}
-
-/* Desktop Defaults (Restoring correct desktop layout if user plays on PC) */
-@media screen and (min-width: 769px) {
-    #bottom-panel {
-        display: none;
-    }
-
-    /* Hide mobile panel on desktop */
-    #hp-bar-container.headband {
-        /* Reset headband styles for desktop */
-        position: relative;
-        top: auto;
-        left: auto;
-        transform: none;
-        width: 200px;
-    }
-}
+/* Desktop Defaults Removed - Mobile UI is now universal */

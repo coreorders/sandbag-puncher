@@ -1,8 +1,74 @@
-// --- Audio Context ---
+// --- Audio Context & BGM ---
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 const audioCtx = new AudioContext();
+let isMuted = false;
+let bgmOscillators = [];
+let bgmInterval = null;
+let bgmNoteIndex = 0;
+
+const NOTES = {
+    'C4': 261.63, 'D4': 293.66, 'E4': 329.63, 'F4': 349.23, 'G4': 392.00, 'A4': 440.00, 'B4': 493.88,
+    'C5': 523.25, 'D5': 587.33, 'E5': 659.25, 'F5': 698.46, 'G5': 783.99, 'A5': 880.00
+};
+
+// Simple Cheerful Melody Loop
+const MELODY = [
+    { n: 'C5', d: 0.2 }, { n: 'E5', d: 0.2 }, { n: 'G5', d: 0.2 }, { n: 'C6', d: 0.4 },
+    { n: 'G5', d: 0.2 }, { n: 'E5', d: 0.2 }, { n: 'C5', d: 0.4 },
+    { n: 'D5', d: 0.2 }, { n: 'F5', d: 0.2 }, { n: 'A5', d: 0.2 }, { n: 'D6', d: 0.4 },
+    { n: 'A5', d: 0.2 }, { n: 'F5', d: 0.2 }, { n: 'D5', d: 0.4 }
+];
+
+const startBGM = () => {
+    if (bgmInterval) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    // Play one note every 400ms approx (adjust logic for rhythm)
+    let nextTime = audioCtx.currentTime;
+
+    bgmInterval = setInterval(() => {
+        if (isMuted) return;
+
+        const note = MELODY[bgmNoteIndex % MELODY.length];
+        bgmNoteIndex++;
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        // Simple Sine for pleasant tone
+        osc.type = 'triangle';
+        // Map note name to freq (simple map or just use C major scale math)
+        // Hardcoding helper for C Major scale names above
+        let freq = NOTES[note.n] || 440;
+        if (note.n === 'C6') freq = 1046.50;
+        if (note.n === 'D6') freq = 1174.66;
+
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.05, audioCtx.currentTime); // Low volume background
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + note.d);
+
+        osc.start(audioCtx.currentTime);
+        osc.stop(audioCtx.currentTime + note.d);
+    }, 250); // Speed
+};
+
+const stopBGM = () => {
+    if (bgmInterval) { clearInterval(bgmInterval); bgmInterval = null; }
+};
+
+const toggleMute = () => {
+    isMuted = !isMuted;
+    const btn = document.getElementById('btn-mute');
+    if (btn) btn.textContent = isMuted ? '🔇' : '🔊';
+    if (!isMuted) {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+};
 
 const playSound = (type) => {
+    if (isMuted) return;
     if (audioCtx.state === 'suspended') audioCtx.resume();
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
@@ -10,10 +76,10 @@ const playSound = (type) => {
     gain.connect(audioCtx.destination);
 
     if (type === 'hit') {
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+        osc.type = 'sine'; // Soft thud
+        osc.frequency.setValueAtTime(100, audioCtx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-        gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime); // Lower volume
         gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
         osc.start();
         osc.stop(audioCtx.currentTime + 0.1);
@@ -21,7 +87,7 @@ const playSound = (type) => {
         osc.type = 'sine';
         osc.frequency.setValueAtTime(400, audioCtx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.2);
-        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
         gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
         osc.start();
         osc.stop(audioCtx.currentTime + 0.5);
@@ -34,7 +100,7 @@ const playSound = (type) => {
             g.connect(audioCtx.destination);
             o.type = 'triangle';
             o.frequency.setValueAtTime(freq, now + i * 0.1);
-            g.gain.setValueAtTime(0.3, now + i * 0.1);
+            g.gain.setValueAtTime(0.2, now + i * 0.1);
             g.gain.linearRampToValueAtTime(0, now + i * 0.1 + 0.5);
             o.start(now + i * 0.1);
             o.stop(now + i * 0.1 + 0.5);
@@ -49,6 +115,12 @@ const playSound = (type) => {
         o.start(); o.stop(audioCtx.currentTime + 0.1);
     }
 };
+
+// ... (Rest of AffixSystem and Item class unchanged, assuming they are before loop starts or not in this replace block) ...
+// NOTE: Since I am replacing the top 60 lines, I need to be careful. 
+// Actually, I will use a separate block for the bottom logic changes.
+// This block handles the Audio overhaul at the top.
+
 
 // --- Affix Data & Configuration (Localization) ---
 const AFFIX_DATA = {
@@ -289,6 +361,13 @@ class Game {
         document.getElementById('btn-open-shop').onclick = () => shopModal.classList.remove('hidden');
         document.getElementById('btn-close-shop').onclick = () => shopModal.classList.add('hidden');
 
+        // Info UI
+        const infoModal = document.getElementById('info-modal');
+        if (infoModal) {
+            document.getElementById('btn-info').onclick = () => infoModal.classList.remove('hidden');
+            document.getElementById('btn-close-info').onclick = () => infoModal.classList.add('hidden');
+        }
+
         // Mobile Panel Toggle Check (Removed logic, just loop)
         const mobileToggle = document.getElementById('mobile-panel-toggle');
         const sidePanel = document.getElementById('side-panel');
@@ -329,7 +408,12 @@ class Game {
         document.getElementById('btn-buy-weapon').onclick = () => this.buyItem('weapon');
         document.getElementById('btn-buy-ring').onclick = () => this.buyItem('ring');
 
-        // Inventory Grid: Drop Target for Loot
+        document.getElementById('btn-mute').onclick = (e) => {
+            e.preventDefault(); // Prevent focus issues
+            toggleMute();
+        };
+
+        // Inventory Grid: Drop Target for Loot AND Unequip
         const invGrid = document.getElementById('inventory-grid');
         if (invGrid) {
             invGrid.ondragover = (e) => e.preventDefault();
@@ -339,10 +423,26 @@ class Game {
                     const data = JSON.parse(e.dataTransfer.getData('text/plain'));
                     if (data.source === 'drop') {
                         this.lootItem(data.index);
+                    } else if (data.source === 'equip') {
+                        // Unequip Logic
+                        const key = data.key;
+                        const item = this.equipment[key];
+                        if (item && this.inventory.length < 20) {
+                            this.equipment[key] = null;
+                            this.inventory.push(item);
+                            this.renderEquipment();
+                            this.renderInventory();
+                        } else if (this.inventory.length >= 20) {
+                            alert("인벤토리가 꽉 찼습니다.");
+                        }
                     }
                 } catch (err) { }
             };
         }
+
+        // Start BGM on first interaction
+        document.body.addEventListener('click', () => startBGM(), { once: true });
+        document.body.addEventListener('touchstart', () => startBGM(), { once: true });
 
         // Global User Interaction Handler for Tooltip Close
         document.body.addEventListener('touchstart', (e) => {
@@ -397,9 +497,8 @@ class Game {
             const type = cfg.key.startsWith('weapon') ? 'weapon-slot' : 'ring-slot';
             div.className = `slot equipment-slot ${type}`;
             div.setAttribute('data-key', cfg.key);
-            // Label is hidden by default in CSS, but structure is here if enabled.
-            // User requested visual clarity: Silhouettes are primary, but labels fix ensures DOM is correct.
-            div.innerHTML = `<span class='slot-label' style='display:block; font-size:0.6rem; color:#888; text-align:center; position:absolute; bottom:2px; width:100%; pointer-events:none;'>${cfg.label}</span><div class='slot-content'></div>`;
+            // User requested visual clarity: Silhouettes are primary, labels removed.
+            div.innerHTML = `<div class='slot-content'></div>`;
 
             // Allow Drop (Equip)
             div.ondragover = (e) => e.preventDefault();
@@ -755,6 +854,7 @@ class Game {
 
                 // Desktop Drag (Loot)
                 el.setAttribute('draggable', 'true');
+                el.style.touchAction = 'none'; // FIX: Force touch drag only
                 el.ondragstart = (e) => {
                     e.dataTransfer.setData('text/plain', JSON.stringify({ source: 'drop', index: this.drops.indexOf(item) }));
                 };
@@ -797,6 +897,7 @@ class Game {
                 if (item.rarity === 'unique') el.classList.add('unique');
                 el.setAttribute('data-tooltip-html', item.getTooltipHTML());
                 el.setAttribute('draggable', 'true');
+                el.style.touchAction = 'none'; // FIX: Force touch drag only
 
                 // --- DRAG EVENTS (DESKTOP) ---
                 el.ondragstart = (e) => {
@@ -808,8 +909,10 @@ class Game {
                 el.ontouchstart = (e) => {
                     this.draggingItemIdx = i;
                     this.touchStartTime = Date.now();
+                    this.touchStartX = e.touches[0].clientX;
+                    this.touchStartY = e.touches[0].clientY;
+                    this.dragGhost = null; // Reset ghost
                 };
-
                 el.ontouchmove = (e) => this.handleTouchMove(e, el);
 
                 el.ontouchend = (e) => {
@@ -817,23 +920,31 @@ class Game {
                     const touch = e.changedTouches[0];
                     const target = document.elementFromPoint(touch.clientX, touch.clientY);
 
-                    if (target) {
-                        // 1. Equip Slot
-                        const slot = target.closest('.slot[data-equippable]');
-                        if (slot) {
-                            const key = slot.getAttribute('data-key');
-                            this.equip(item, i, key);
-                        }
-                        // 2. Trash Can
-                        if (target.closest('#trash-can')) {
-                            this.inventory.splice(i, 1);
-                            this.renderInventory();
+                    // Drag Drop Logic
+                    if (this.draggingItemIdx !== null && (Math.abs(touch.clientX - this.touchStartX) > 10 || Math.abs(touch.clientY - this.touchStartY) > 10)) {
+                        if (target) {
+                            const slot = target.closest('.slot[data-equippable]');
+                            if (slot) {
+                                const key = slot.getAttribute('data-key');
+                                this.equip(item, i, key);
+                            } else if (target.closest('#trash-can')) {
+                                this.inventory.splice(i, 1);
+                                this.renderInventory();
+                            }
                         }
                     } else {
-                        // Tap tooltip
-                        if (Date.now() - this.touchStartTime < 300) {
+                        // It was a Tap
+                        const now = Date.now();
+                        if (this.lastTapTime && (now - this.lastTapTime < 300) && this.lastTapItemIdx === i) {
+                            // DOUBLE TAP -> Auto Equip
+                            this.autoEquip(item, i);
+                            this.lastTapTime = 0; // Reset
+                        } else {
+                            // Single Tap -> Tooltip
                             const rect = el.getBoundingClientRect();
                             this.showTooltip(item.getTooltipHTML(), rect.right, rect.top);
+                            this.lastTapTime = now;
+                            this.lastTapItemIdx = i;
                         }
                     }
                     this.draggingItemIdx = null;
@@ -882,6 +993,25 @@ class Game {
     }
     removeGhost() { if (this.dragGhost) { this.dragGhost.remove(); this.dragGhost = null; } }
 
+    autoEquip(item, idx) {
+        // Find best slot
+        const type = item.type; // 'weapon' or 'ring'
+        let targetKey = null;
+
+        // 1. Check for empty slots
+        if (type === 'weapon') {
+            if (!this.equipment.weapon1) targetKey = 'weapon1';
+            else if (!this.equipment.weapon2) targetKey = 'weapon2';
+            else targetKey = 'weapon1'; // Default swap
+        } else {
+            if (!this.equipment.ring1) targetKey = 'ring1';
+            else if (!this.equipment.ring2) targetKey = 'ring2';
+            else targetKey = 'ring1'; // Default swap
+        }
+
+        if (targetKey) this.equip(item, idx, targetKey);
+    }
+
     equip(item, idx, targetSlotKey) {
         if (targetSlotKey) {
             const keyType = targetSlotKey.startsWith('weapon') ? 'weapon' : 'ring';
@@ -906,17 +1036,55 @@ class Game {
                 if (i.rarity === 'unique') el.classList.add('unique');
                 el.style.width = '100%'; el.style.height = '100%'; el.textContent = i.icon;
                 el.setAttribute('data-tooltip-html', i.getTooltipHTML());
-                el.onclick = () => {
-                    if (this.inventory.length < 20) { this.equipment[k] = null; this.inventory.push(i); this.renderEquipment(); this.renderInventory(); }
+                el.setAttribute('data-tooltip-html', i.getTooltipHTML());
+                el.style.touchAction = 'none';
+
+                // Click -> Show Tooltip (User Request)
+                el.onclick = (e) => {
+                    const rect = el.getBoundingClientRect();
+                    this.showTooltip(i.getTooltipHTML(), rect.right, rect.top);
                 };
+
+                // Drag -> Unequip preparation
+                el.setAttribute('draggable', 'true');
+                el.ondragstart = (e) => {
+                    e.dataTransfer.setData('text/plain', JSON.stringify({ source: 'equip', key: k }));
+                };
+                el.ontouchstart = (e) => {
+                    this.touchStartTime = Date.now();
+                    this.touchStartX = e.touches[0].clientX;
+                    this.touchStartY = e.touches[0].clientY;
+                    this.draggingEquipKey = k;
+                };
+                el.ontouchmove = (e) => this.handleTouchMove(e, el);
+                el.ontouchend = (e) => {
+                    this.removeGhost();
+                    const touch = e.changedTouches[0];
+                    // Tap -> Tooltip (Backup for touch)
+                    if (Date.now() - this.touchStartTime < 300 && Math.abs(touch.clientX - this.touchStartX) < 10) {
+                        const rect = el.getBoundingClientRect();
+                        this.showTooltip(i.getTooltipHTML(), rect.right, rect.top);
+                    } else {
+                        // Drag Drop (Touch) - Check if dropped on inventory
+                        const target = document.elementFromPoint(touch.clientX, touch.clientY);
+                        if (target && target.closest('#inventory-grid')) {
+                            // Unequip
+                            if (this.inventory.length < 20) {
+                                this.equipment[k] = null;
+                                this.inventory.push(i);
+                                this.renderEquipment();
+                                this.renderInventory();
+                            } else {
+                                alert("인벤토리가 꽉 찼습니다.");
+                            }
+                        }
+                    }
+                    this.draggingEquipKey = null;
+                };
+
                 div.appendChild(el);
             }
         });
-        const s = this.calculateStats();
-        // Update stats summary localization - NO DECIMALS
-        document.getElementById('stat-bonus-dmg').textContent = Math.floor(s.incDmg);
-        document.getElementById('stat-flat-dmg').textContent = Math.floor(this.char.baseDmg); // Approximation
-        document.getElementById('stat-crit-chance').textContent = Math.floor(s.critChance);
     }
 
     updateUI() { document.getElementById('score').textContent = this.damage.toLocaleString(); }
