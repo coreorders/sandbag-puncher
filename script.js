@@ -663,8 +663,9 @@ class Game {
 
     renderInventory() {
         this.inventoryGrid.innerHTML = '';
-        for (let i = 0; i < 15; i++) {
+        for (let i = 0; i < 20; i++) {
             const slot = document.createElement('div'); slot.className = 'slot';
+            // ... (rest is same)
             if (this.inventory[i]) {
                 const item = this.inventory[i];
                 const el = document.createElement('div');
