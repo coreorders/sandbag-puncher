@@ -1418,3 +1418,19 @@ h3 {
     /* Preserve newlines */
     text-align: left;
 }
+
+/* Item Level Display */
+.item-level {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    font-size: 0.5rem;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 0 2px;
+    border-radius: 2px;
+    pointer-events: none;
+    line-height: normal;
+    font-weight: 300;
+    z-index: 10;
+}

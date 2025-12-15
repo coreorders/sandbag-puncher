@@ -167,6 +167,7 @@ function getRandomInt(min, max) { return Math.floor(Math.random() * (max - min +
 class AffixSystem {
     static rollItem(type, sandbagLevel) {
         const item = new Item(type);
+        item.level = sandbagLevel;
         item.baseDamage = sandbagLevel * 3;
 
         // Unique Roll
@@ -286,6 +287,7 @@ class Item {
         this.icon = '';
         this.rarity = 'normal';
         this.baseDamage = 0;
+        this.level = 1;
 
         if (type === 'weapon') this.icon = '🗡️';
         else if (type === 'ring') this.icon = '💍';
@@ -880,7 +882,7 @@ class Game {
             this.skelTimer -= threshold; // Keep remainder
 
             let dmg = stats.boneUnity ? this.lastTotalDmg : 10 * (1 + stats.minionDmg / 100);
-            if (stats.skelStorm) dmg *= 5; // x5 Dmg
+            if (stats.skelStormCount > 0) dmg *= (5 * stats.skelStormCount); // x5 Per Item
 
             const arrows = stats.boneUnity ? 1 : stats.skelArrows;
             for (let i = 0; i < arrows; i++) {
@@ -919,7 +921,7 @@ class Game {
             incDmg: 0, atkSpd: 0, critChance: 0, critMulti: 200, projectiles: 0,
             weaponEffectScale: 0, poisonPercent: 0, hasSkeleton: false, minionDmg: 0,
             skelArrows: 1, poisonChance: 0, boneUnity: false, poisonDurationInfo: 0,
-            drillRate: 0, awl: false, skelStorm: false, skelSpeedBonus: 0
+            drillRate: 0, awl: false, skelStormCount: 0, skelSpeedBonus: 0
         };
         ['ring1', 'ring2'].forEach(k => { var i = this.equipment[k]; if (i) i.affixes.forEach(a => { if (a.stat === 'weaponEffectScale') s.weaponEffectScale += a.value; }); });
         ['weapon1', 'weapon2', 'ring1', 'ring2'].forEach(k => {
@@ -943,7 +945,7 @@ class Game {
                 }
                 if (a.stat === 'uniqueDrill') s.drillRate += a.value;
                 if (a.stat === 'uniqueAwl') s.awl = true;
-                if (a.stat === 'uniqueSkelStorm') { s.skelStorm = true; s.skelSpeedBonus += a.value; }
+                if (a.stat === 'uniqueSkelStorm') { s.skelStormCount++; s.skelSpeedBonus += a.value; }
             });
         });
 
@@ -998,7 +1000,7 @@ class Game {
                 const item = show[i];
                 const el = document.createElement('div');
                 el.className = `ground-item ${item.rarity}`;
-                el.textContent = item.icon;
+                el.innerHTML = `${item.icon}<div class='item-level'>${item.level}</div>`;
                 el.setAttribute('data-tooltip-html', item.getTooltipHTML());
 
                 let clicks = 0;
@@ -1083,7 +1085,7 @@ class Game {
                 const item = this.inventory[i];
                 const el = document.createElement('div');
                 el.className = `item ${item.rarity} ${item.type}`;
-                el.textContent = item.icon;
+                el.innerHTML = `${item.icon}<div class='item-level'>${item.level}</div>`;
                 if (item.rarity === 'unique') el.classList.add('unique');
                 el.setAttribute('data-tooltip-html', item.getTooltipHTML());
                 el.setAttribute('draggable', 'true');
@@ -1232,7 +1234,8 @@ class Game {
             if (i) {
                 const el = document.createElement('div'); el.className = `item ${i.rarity} ${i.type}`;
                 if (i.rarity === 'unique') el.classList.add('unique');
-                el.style.width = '100%'; el.style.height = '100%'; el.textContent = i.icon;
+                el.style.width = '100%'; el.style.height = '100%';
+                el.innerHTML = `${i.icon}<div class='item-level'>${i.level}</div>`;
                 el.setAttribute('data-tooltip-html', i.getTooltipHTML());
                 el.setAttribute('data-tooltip-html', i.getTooltipHTML());
                 el.style.touchAction = 'none';
