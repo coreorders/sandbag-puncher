@@ -1057,72 +1057,65 @@ h1 {
 
     /* COL 1: EQUIP (Fixed Width) */
     #col-equip {
-        flex: 0 0 14%;
-        /* Fixed width */
+        flex: 0 0 13%;
+        /* Reduced further */
         background: #1a1a1a;
         min-width: 0;
     }
 
     #equipment-slots {
         flex-direction: column;
-        /* Stack vertically */
         gap: 2px;
         overflow-y: auto;
         height: 100%;
     }
 
     #equipment-slots .slot {
-        width: 35px;
-        height: 35px;
-        /* Small icons */
+        width: 100%;
+        aspect-ratio: 1/1;
+        background: #252525;
+        border: 1px solid #444;
+        position: relative;
+        /* For silhouette */
     }
 
-    .slot-label {
-        display: none;
+    /* Silhouette for Empty Slots (High Contrast) */
+    .slot[data-key^="weapon"] .slot-content:empty::before {
+        content: '🗡️';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 1.5rem;
+        opacity: 0.5;
+        pointer-events: none;
+        filter: grayscale(100%);
     }
 
-    /* Hide labels to save space */
-    #stats-summary {
-        font-size: 0.6rem;
-        padding: 2px;
+    .slot[data-key^="ring"] .slot-content:empty::before {
+        content: '💍';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 1.5rem;
+        opacity: 0.5;
+        pointer-events: none;
+        filter: grayscale(100%);
     }
 
     /* COL 2: INVENTORY (Fixed Width) */
     #col-inv {
-        flex: 0 0 43%;
-        /* Fixed width */
+        flex: 0 0 42%;
+        /* Reduced further */
         background: #252525;
         display: flex;
         flex-direction: column;
         min-width: 0;
+        border-right: 1px solid #444;
     }
 
-    .col-header {
-        display: flex;
-        justify-content: space-between;
-        width: 100%;
-        align-items: center;
-        padding: 0 5px;
-        flex-shrink: 0;
-        height: 30px;
-    }
-
-    .inv-controls {
-        display: flex;
-        gap: 5px;
-    }
-
-    #btn-open-shop,
-    #trash-can {
-        font-size: 0.9rem;
-        padding: 2px;
-    }
-
-    .gold-mode {
-        font-size: 0.6rem;
-        display: flex;
-        align-items: center;
-    }
+    /* ... (headers unchanged) ... */
 
     #inventory-grid {
         display: grid;
@@ -1130,43 +1123,30 @@ h1 {
         grid-template-rows: repeat(5, 1fr);
         width: 100%;
         flex-grow: 1;
-        /* Fill remaining height */
         gap: 2px;
         padding: 2px;
         overflow: hidden;
     }
 
-    #inventory-grid .slot {
+    /* Shared Slot Styles for Inventory AND Drops */
+    #inventory-grid .slot,
+    #ground-items .slot {
         width: 100%;
         height: 100%;
         background: #333;
-        /* Visual Grid Background */
+        /* Grid Background */
         border: 1px solid #444;
-        /* Visual Grid Border */
+        /* Grid Border */
         display: flex;
         justify-content: center;
         align-items: center;
         overflow: hidden;
     }
 
-    .item {
-        font-size: 1.5rem;
-        /* Fixed icon size */
-        width: 100%;
-        height: 100%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        touch-action: none;
-        /* KEY FIX: Diesables browser scroll on items */
-        user-select: none;
-        -webkit-user-select: none;
-    }
-
     /* COL 3: DROPS (Fixed Width) */
     #col-drops {
-        flex: 0 0 43%;
-        /* Fixed width */
+        flex: 0 0 42%;
+        /* Reduced further */
         background: #1e1e1e;
         border-right: none;
         display: flex;
@@ -1174,19 +1154,7 @@ h1 {
         min-width: 0;
     }
 
-    #loot-filter {
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 2px;
-        flex-shrink: 0;
-        height: 30px;
-        align-items: center;
-        display: flex;
-    }
-
-    #loot-filter label {
-        font-size: 0.6rem;
-    }
+    /* ... (filters unchanged) ... */
 
     #ground-items {
         display: grid;
@@ -1197,7 +1165,6 @@ h1 {
         width: 100%;
         flex-grow: 1;
         overflow: hidden;
-        /* No scrolling, fixed 20 */
         padding: 2px;
     }
 
@@ -1213,13 +1180,35 @@ h1 {
         align-items: center;
     }
 
-    /* Shop Modal Centered */
-    #shop-modal {
-        position: fixed;
-        width: 90%;
-        top: 30%;
-        left: 50%;
-    }
+    grid-template-rows: repeat(5, 1fr);
+    /* 4x5 Fixed Grid */
+    gap: 2px;
+    width: 100%;
+    flex-grow: 1;
+    overflow: hidden;
+    /* No scrolling, fixed 20 */
+    padding: 2px;
+}
+
+.ground-item {
+    font-size: 1.5rem;
+    background: #2a2a2a;
+    border: 1px dashed #444;
+    width: 100%;
+    height: 100%;
+    /* Fill slot */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Shop Modal Centered */
+#shop-modal {
+    position: fixed;
+    width: 90%;
+    top: 30%;
+    left: 50%;
+}
 }
 
 /* Desktop Defaults (Restoring correct desktop layout if user plays on PC) */
