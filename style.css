@@ -1055,11 +1055,12 @@ h1 {
         text-align: center;
     }
 
-    /* COL 1: EQUIP (Smallest) */
+    /* COL 1: EQUIP (Fixed Width) */
     #col-equip {
-        flex: 1.2;
-        /* Narrower */
+        flex: 0 0 14%;
+        /* Fixed width */
         background: #1a1a1a;
+        min-width: 0;
     }
 
     #equipment-slots {
@@ -1067,6 +1068,7 @@ h1 {
         /* Stack vertically */
         gap: 2px;
         overflow-y: auto;
+        height: 100%;
     }
 
     #equipment-slots .slot {
@@ -1085,10 +1087,14 @@ h1 {
         padding: 2px;
     }
 
-    /* COL 2: INVENTORY (Main) */
+    /* COL 2: INVENTORY (Fixed Width) */
     #col-inv {
-        flex: 2.5;
+        flex: 0 0 43%;
+        /* Fixed width */
         background: #252525;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
     }
 
     .col-header {
@@ -1097,6 +1103,8 @@ h1 {
         width: 100%;
         align-items: center;
         padding: 0 5px;
+        flex-shrink: 0;
+        height: 30px;
     }
 
     .inv-controls {
@@ -1121,34 +1129,59 @@ h1 {
         grid-template-columns: repeat(4, 1fr);
         grid-template-rows: repeat(5, 1fr);
         width: 100%;
-        height: 100%;
+        flex-grow: 1;
+        /* Fill remaining height */
         gap: 2px;
         padding: 2px;
-        overflow-y: auto;
+        overflow: hidden;
     }
 
     #inventory-grid .slot {
         width: 100%;
-        height: aspect-ratio;
-        aspect-ratio: 1/1;
+        height: 100%;
         background: #333;
+        /* Visual Grid Background */
+        border: 1px solid #444;
+        /* Visual Grid Border */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
     }
 
     .item {
-        font-size: 1.2rem;
+        font-size: 1.5rem;
+        /* Fixed icon size */
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        touch-action: none;
+        /* KEY FIX: Diesables browser scroll on items */
+        user-select: none;
+        -webkit-user-select: none;
     }
 
-    /* COL 3: DROPS (Main) */
+    /* COL 3: DROPS (Fixed Width) */
     #col-drops {
-        flex: 2.5;
+        flex: 0 0 43%;
+        /* Fixed width */
         background: #1e1e1e;
         border-right: none;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
     }
 
     #loot-filter {
         flex-wrap: wrap;
         justify-content: center;
         gap: 2px;
+        flex-shrink: 0;
+        height: 30px;
+        align-items: center;
+        display: flex;
     }
 
     #loot-filter label {
@@ -1158,17 +1191,26 @@ h1 {
     #ground-items {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
+        grid-template-rows: repeat(5, 1fr);
+        /* 4x5 Fixed Grid */
         gap: 2px;
         width: 100%;
-        height: 100%;
-        overflow-y: auto;
+        flex-grow: 1;
+        overflow: hidden;
+        /* No scrolling, fixed 20 */
         padding: 2px;
-        background: none;
     }
 
     .ground-item {
-        font-size: 1.2rem;
-        min-height: 30px;
+        font-size: 1.5rem;
+        background: #2a2a2a;
+        border: 1px dashed #444;
+        width: 100%;
+        height: 100%;
+        /* Fill slot */
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
 
     /* Shop Modal Centered */

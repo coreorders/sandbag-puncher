@@ -189,6 +189,7 @@ class Item {
         this.affixes.forEach(a => {
             if (a.stat === 'uniqueBoneUnity' || a.stat === 'uniqueHornet') return;
             let txt = '';
+            // Stat Formatting: Integers Only
             if (a.stat === 'incDmg') txt = `물리 피해 +${a.value}%`;
             else if (a.stat === 'poisonDmg') txt = `중독 (3초간 물리 피해의 ${a.value}%)`;
             else if (a.stat === 'poisonChance') txt = `중독 확률 +${a.value}%`;
@@ -244,6 +245,9 @@ class Game {
         this.goldMode = false;
         this.lastTotalDmg = 10;
 
+        // Drag State
+        this.draggingItemIdx = null;
+
         // Dom
         this.sandbag = document.getElementById('sandbag');
         this.hpBar = document.getElementById('hp-bar');
@@ -289,7 +293,7 @@ class Game {
         // Mobile Panel Toggle
         const mobileToggle = document.getElementById('mobile-panel-toggle');
         const sidePanel = document.getElementById('side-panel');
-        if (mobileToggle) {
+        if (mobileToggle && sidePanel) {
             mobileToggle.onclick = () => {
                 const isActive = sidePanel.classList.toggle('active');
                 mobileToggle.textContent = isActive ? '❌' : '🎒';
@@ -309,6 +313,20 @@ class Game {
         document.getElementById('btn-buy-weapon').onclick = () => this.buyItem('weapon');
         document.getElementById('btn-buy-ring').onclick = () => this.buyItem('ring');
 
+        // Global User Interaction Handler for Tooltip Close
+        document.body.addEventListener('touchstart', (e) => {
+            // If touch anything that is NOT an item/drop with tooltip, hide tooltip
+            if (!e.target.closest('[data-tooltip-html]')) {
+                this.tooltip.style.display = 'none';
+            }
+        }, { passive: true });
+        document.body.addEventListener('click', (e) => {
+            if (!e.target.closest('[data-tooltip-html]')) {
+                this.tooltip.style.display = 'none';
+            }
+        });
+
+        // Hover for Desktop
         document.addEventListener('mouseover', e => {
             const t = e.target.closest('[data-tooltip-html]');
             if (t) { this.tooltip.innerHTML = t.getAttribute('data-tooltip-html'); this.tooltip.style.display = 'block'; }
@@ -331,12 +349,35 @@ class Game {
             div.className = 'slot equipment-slot';
             div.setAttribute('data-key', key);
             div.innerHTML = `<span class='slot-label'>${label}</span><div class='slot-content'></div>`;
+
+            // Allow Drop
+            div.ondragover = (e) => e.preventDefault();
+            div.ondrop = (e) => {
+                e.preventDefault();
+                const invIdx = e.dataTransfer.getData('text/plain');
+                if (invIdx !== '' && this.inventory[invIdx]) {
+                    this.equip(this.inventory[invIdx], invIdx, key);
+                }
+            };
+
+            // Touch Drop Simulation
+            // We can't use ondrop for touch. We rely on the dragged element's touchend logic to find this slot.
+            div.setAttribute('data-equippable', key);
+
             slotsDiv.appendChild(div);
         });
     }
 
     init() {
         this.sandbag.addEventListener('mousedown', (e) => this.punch(e));
+        // Touch support for punching to avoid zoom/delay
+        this.sandbag.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                this.punch(e.changedTouches[i]);
+            }
+        }, { passive: false });
+
         this.sandbag.addEventListener('dragstart', (e) => e.preventDefault());
         this.updateSandbagUI();
         this.updateFormulaDisplay(0, 0, 0, 0);
@@ -369,29 +410,22 @@ class Game {
     updateSandbagUI() {
         document.getElementById('sandbag-level-display').textContent = `샌드백 Lv.${this.sandbagLevel}`;
         this.updateHpBar();
-
         if (this.sandbagLevel === 1000) this.sandbag.classList.add('devil');
         else this.sandbag.classList.remove('devil');
     }
 
-    updateShopUI() {
-        document.getElementById('shop-cost').textContent = this.sandbagLevel * 100;
-    }
-
+    updateShopUI() { document.getElementById('shop-cost').textContent = this.sandbagLevel * 100; }
     updateHpBar() {
         const pct = Math.max(0, (this.sandbagHp / this.sandbagMaxHp) * 100);
         this.hpBar.style.width = `${pct}%`;
         this.hpText.textContent = `${Math.ceil(this.sandbagHp).toLocaleString()} / ${this.sandbagMaxHp.toLocaleString()}`;
     }
-
-    updateGoldUI() {
-        document.getElementById('gold-display').textContent = `${this.gold.toLocaleString()} G`;
-    }
+    updateGoldUI() { document.getElementById('gold-display').textContent = `${this.gold.toLocaleString()} G`; }
 
     buyItem(type) {
         const cost = this.sandbagLevel * 100;
         if (this.gold < cost) return alert("골드가 부족합니다!");
-        if (this.inventory.length >= 15) return alert("인벤토리가 가득 찼습니다!");
+        if (this.inventory.length >= 20) return alert("인벤토리가 가득 찼습니다!");
 
         this.gold -= cost;
         this.updateGoldUI();
@@ -403,6 +437,10 @@ class Game {
 
     punch(e) {
         if (!this.gameRunning) return;
+
+        // Hide tooltip on punch immediately
+        this.tooltip.style.display = 'none';
+
         const stats = this.calculateStats();
 
         let weaponBase = 0;
@@ -419,7 +457,6 @@ class Game {
         this.lastTotalDmg = totalDmg;
 
         this.updateFormulaDisplay(baseDmg, stats.incDmg, isCrit ? stats.critMulti : 0, totalDmg);
-
         this.dealDamage(totalDmg, isCrit, e ? e.clientX : null, e ? e.clientY : null);
 
         if (stats.poisonPercent > 0) {
@@ -436,10 +473,11 @@ class Game {
     }
 
     updateFormulaDisplay(base, inc, crit, total) {
+        // Integers only
         let html = `
         <div class="formula-row"><span class="formula-label">기본</span><span class="formula-val">${Math.floor(base)}</span></div>
         <div class="formula-row"><span class="formula-label">증폭</span><span class="formula-val">+${Math.floor(inc)}%</span></div>
-        <div class="formula-row"><span class="formula-label">치명</span><span class="formula-val ${crit > 0 ? 'crit' : ''}">${crit > 0 ? 'x' + (crit / 100).toFixed(1) : '-'}</span></div>
+        <div class="formula-row"><span class="formula-label">치명</span><span class="formula-val ${crit > 0 ? 'crit' : ''}">${crit > 0 ? 'x' + (crit / 100).toFixed(0) : '-'}</span></div>
         <div class="formula-row"><span class="formula-label">총합</span><span class="formula-val" style="font-size:1.1rem">${Math.ceil(total).toLocaleString()}</span></div>
         `;
         this.formulaDisplay.innerHTML = html;
@@ -479,10 +517,8 @@ class Game {
 
         this.char.gainXp(this.sandbagMaxHp);
         this.sandbagHp = this.sandbagMaxHp;
-
         this.sandbag.classList.add('dead');
         setTimeout(() => this.sandbag.classList.remove('dead'), 500);
-
         this.spawnDrop();
     }
 
@@ -525,25 +561,13 @@ class Game {
 
     skeletonShoot() {
         if (!this.gameRunning || !this.skeletons) return;
-
         const stats = this.calculateStats();
-
         this.skelTimer += 1000;
-        // Bone Unity no longer slows down (uses 1000ms default)
         const interval = 1000;
-
         if (this.skelTimer >= interval) {
             this.skelTimer = 0;
-
-            let dmg = 0;
-            if (stats.boneUnity) {
-                dmg = this.lastTotalDmg;
-            } else {
-                dmg = 10 * (1 + stats.minionDmg / 100);
-            }
-
+            let dmg = stats.boneUnity ? this.lastTotalDmg : 10 * (1 + stats.minionDmg / 100);
             const arrows = stats.boneUnity ? 1 : stats.skelArrows;
-
             for (let i = 0; i < arrows; i++) {
                 setTimeout(() => {
                     const arrow = document.createElement('div');
@@ -556,20 +580,13 @@ class Game {
                         arrow.style.left = sRect.left + 20 + 'px';
                         arrow.style.top = sRect.top + 20 + 'px';
                         document.body.appendChild(arrow);
-
                         requestAnimationFrame(() => {
                             arrow.style.transition = 'all 0.4s linear';
                             arrow.style.left = (bRect.left + bRect.width / 2) + 'px';
                             arrow.style.top = (bRect.top + bRect.height / 2) + 'px';
                         });
-
-                        setTimeout(() => {
-                            arrow.remove();
-                            this.dealDamage(dmg);
-                        }, 400);
-                    } else {
-                        this.dealDamage(dmg);
-                    }
+                        setTimeout(() => { arrow.remove(); this.dealDamage(dmg); }, 400);
+                    } else { this.dealDamage(dmg); }
                 }, i * 200);
             }
         }
@@ -577,13 +594,10 @@ class Game {
 
     calculateStats() {
         let s = { incDmg: 0, atkSpd: 0, critChance: 0, critMulti: 200, projectiles: 0, weaponEffectScale: 0, poisonPercent: 0, hasSkeleton: false, minionDmg: 0, skelArrows: 1, poisonChance: 0, boneUnity: false, poisonDurationInfo: 0 };
-
         ['ring1', 'ring2'].forEach(k => { var i = this.equipment[k]; if (i) i.affixes.forEach(a => { if (a.stat === 'weaponEffectScale') s.weaponEffectScale += a.value; }); });
-
         ['weapon1', 'weapon2', 'ring1', 'ring2'].forEach(k => {
             const i = this.equipment[k]; if (!i) return;
             let scale = (i.type === 'weapon' ? 1 + s.weaponEffectScale / 100 : 1);
-
             i.affixes.forEach(a => {
                 let v = a.value * scale;
                 if (a.stat === 'incDmg') s.incDmg += v;
@@ -597,9 +611,7 @@ class Game {
                 if (a.stat === 'skeletonArrow') s.skelArrows += v;
                 if (a.stat === 'uniqueBoneUnity') s.boneUnity = true;
                 if (a.stat === 'uniqueHornet') {
-                    s.poisonChance += 100;
-                    s.poisonPercent += 100;
-                    s.poisonDurationInfo += a.value; // Store for applyPoison
+                    s.poisonChance += 100; s.poisonPercent += 100; s.poisonDurationInfo += a.value;
                 }
             });
         });
@@ -609,32 +621,20 @@ class Game {
     spawnDrop() {
         if (this.goldMode) {
             const amount = this.sandbagLevel * getRandomInt(5, 15);
-            this.gold += amount;
-            this.updateGoldUI();
-
+            this.gold += amount; this.updateGoldUI();
             const rect = this.sandbag.getBoundingClientRect();
-            const el = document.createElement('div');
-            el.className = 'gold-text';
-            el.textContent = `+${amount} G`;
-            el.style.left = (rect.left + rect.width / 2) + 'px';
-            el.style.top = (rect.top) + 'px';
-            document.body.appendChild(el);
-            setTimeout(() => el.remove(), 1000);
-            playSound('coin');
-            return;
+            const el = document.createElement('div'); el.className = 'gold-text'; el.textContent = `+${amount} G`;
+            el.style.left = (rect.left + rect.width / 2) + 'px'; el.style.top = (rect.top) + 'px';
+            document.body.appendChild(el); setTimeout(() => el.remove(), 1000); playSound('coin'); return;
         }
-
         if (this.drops.length >= 100) this.drops.shift();
-
         const types = ['weapon', 'ring', 'weapon', 'ring'];
         const type = types[Math.floor(Math.random() * types.length)];
         const item = AffixSystem.rollItem(type, this.sandbagLevel);
-
         this.drops.push(item);
         if (item.rarity === 'unique') playSound('drop_legendary');
         else if (item.rarity === 'legendary') playSound('drop_legendary');
         else if (item.rarity === 'epic' || item.rarity === 'rare') playSound('drop_rare');
-
         this.renderDrops();
     }
 
@@ -644,28 +644,51 @@ class Game {
         const visibleDrops = this.drops.filter(i => (filters.includes(i.rarity) || i.rarity === 'unique'));
         const show = visibleDrops.slice(-20).reverse();
 
-        show.forEach(item => {
+        for (let i = 0; i < 20; i++) {
             const slot = document.createElement('div');
-            slot.className = `ground-item ${item.rarity}`;
-            slot.textContent = item.icon;
-            slot.setAttribute('data-tooltip-html', item.getTooltipHTML());
-            slot.onclick = () => {
-                if (this.inventory.length >= 15) return alert("인벤토리가 가득 찼습니다!");
-                const idx = this.drops.indexOf(item);
-                if (idx > -1) this.drops.splice(idx, 1);
-                this.inventory.push(item);
-                this.renderDrops();
-                this.renderInventory();
-            };
+            slot.className = 'slot'; // Reuse slot class for sizing
+
+            if (show[i]) {
+                const item = show[i];
+                const el = document.createElement('div');
+                el.className = `ground-item ${item.rarity}`;
+                el.textContent = item.icon;
+                el.setAttribute('data-tooltip-html', item.getTooltipHTML());
+
+                let clicks = 0;
+                let timer = null;
+                el.onclick = (e) => {
+                    e.preventDefault();
+                    clicks++;
+                    if (clicks === 1) {
+                        timer = setTimeout(() => {
+                            clicks = 0;
+                            this.tooltip.innerHTML = item.getTooltipHTML();
+                            this.tooltip.style.display = 'block';
+                        }, 250);
+                    } else {
+                        clearTimeout(timer);
+                        clicks = 0;
+                        if (this.inventory.length >= 20) return alert("인벤토리가 가득 찼습니다!");
+                        const idx = this.drops.indexOf(item);
+                        if (idx > -1) this.drops.splice(idx, 1);
+                        this.inventory.push(item);
+                        this.renderDrops();
+                        this.renderInventory();
+                    }
+                };
+                slot.appendChild(el);
+            }
             this.groundItemsDiv.appendChild(slot);
-        });
+        }
     }
 
     renderInventory() {
         this.inventoryGrid.innerHTML = '';
         for (let i = 0; i < 20; i++) {
             const slot = document.createElement('div'); slot.className = 'slot';
-            // ... (rest is same)
+            // Slot needs to accept drop? No, inventory slots don't swap yet.
+
             if (this.inventory[i]) {
                 const item = this.inventory[i];
                 const el = document.createElement('div');
@@ -673,14 +696,88 @@ class Game {
                 el.textContent = item.icon;
                 if (item.rarity === 'unique') el.classList.add('unique');
                 el.setAttribute('data-tooltip-html', item.getTooltipHTML());
-                el.onclick = () => {
-                    if (this.deleteMode) {
-                        this.inventory.splice(i, 1);
-                        this.renderInventory();
-                    } else {
-                        this.equip(item, i);
+                el.setAttribute('draggable', 'true');
+
+                // --- DRAG EVENTS (DESKTOP) ---
+                el.ondragstart = (e) => {
+                    e.dataTransfer.setData('text/plain', i);
+                    this.draggingItemIdx = i; // fallback
+                };
+
+                // --- TOUCH DRAG EVENTS (MOBILE) ---
+                el.ontouchstart = (e) => {
+                    this.draggingItemIdx = i;
+                    this.touchStartTime = Date.now();
+                };
+
+                el.ontouchmove = (e) => {
+                    // Check if dragging (if moved enough)
+                    if (this.draggingItemIdx !== null) {
+                        e.preventDefault(); // Stop scrolling
+                        const touch = e.touches[0];
+
+                        // Create Ghost if not exists
+                        if (!this.dragGhost) {
+                            this.dragGhost = el.cloneNode(true);
+                            this.dragGhost.style.position = 'fixed';
+                            this.dragGhost.style.zIndex = '9999';
+                            this.dragGhost.style.pointerEvents = 'none'; // Click through
+                            this.dragGhost.style.width = '50px';
+                            this.dragGhost.style.height = '50px';
+                            this.dragGhost.style.opacity = '0.8';
+                            this.dragGhost.style.background = '#444';
+                            this.dragGhost.style.borderRadius = '5px';
+                            document.body.appendChild(this.dragGhost);
+                        }
+
+                        // Update Ghost Pos
+                        this.dragGhost.style.left = (touch.clientX - 25) + 'px';
+                        this.dragGhost.style.top = (touch.clientY - 25) + 'px';
                     }
                 };
+
+                el.ontouchend = (e) => {
+                    // Remove Ghost
+                    if (this.dragGhost) {
+                        this.dragGhost.remove();
+                        this.dragGhost = null;
+
+                        // Check drop target logic
+                        const touch = e.changedTouches[0];
+                        const target = document.elementFromPoint(touch.clientX, touch.clientY);
+                        if (target) {
+                            // Find equipment slot
+                            const slot = target.closest('.slot[data-equippable]');
+                            if (slot) {
+                                const key = slot.getAttribute('data-key');
+                                this.equip(item, i, key);
+                            }
+                        }
+                    } else {
+                        // Was just a tap (no drag ghost created) -> Show Tooltip?
+                        // Only show tooltip if very short duration and no drag
+                        if (Date.now() - this.touchStartTime < 300) {
+                            this.tooltip.innerHTML = item.getTooltipHTML();
+                            this.tooltip.style.display = 'block';
+                        }
+                    }
+                    this.draggingItemIdx = null;
+                };
+
+                // Click Disabled for Touch (Handled by ontouchend tap detection)
+                el.onclick = (e) => {
+                    // Desktop click fallback
+                    if (e.pointerType === 'mouse') {
+                        if (this.deleteMode) {
+                            this.inventory.splice(i, 1);
+                            this.renderInventory();
+                        } else {
+                            this.tooltip.innerHTML = item.getTooltipHTML();
+                            this.tooltip.style.display = 'block';
+                        }
+                    }
+                };
+
                 slot.appendChild(el);
             }
             this.inventoryGrid.appendChild(slot);
@@ -688,13 +785,20 @@ class Game {
         document.getElementById('inv-count').textContent = this.inventory.length;
     }
 
-    equip(item, idx) {
-        this.inventory.splice(idx, 1);
-        let k = (item.type === 'weapon' ? (!this.equipment.weapon1 ? 'weapon1' : !this.equipment.weapon2 ? 'weapon2' : 'weapon1') : (!this.equipment.ring1 ? 'ring1' : !this.equipment.ring2 ? 'ring2' : 'ring1'));
-        if (this.equipment[k]) this.inventory.push(this.equipment[k]);
-        this.equipment[k] = item;
-        this.renderEquipment(); this.renderInventory();
+    equip(item, idx, targetSlotKey) {
+        if (targetSlotKey) {
+            const keyType = targetSlotKey.startsWith('weapon') ? 'weapon' : 'ring';
+            if (item.type !== keyType) return; // Wrong slot type
+
+            this.inventory.splice(idx, 1);
+            const oldItem = this.equipment[targetSlotKey];
+            if (oldItem) this.inventory.push(oldItem);
+
+            this.equipment[targetSlotKey] = item;
+            this.renderEquipment(); this.renderInventory();
+        }
     }
+
     renderEquipment() {
         ['weapon1', 'weapon2', 'ring1', 'ring2'].forEach(k => {
             const div = document.querySelector(`.slot[data-key="${k}"] .slot-content`);
@@ -706,22 +810,20 @@ class Game {
                 el.style.width = '100%'; el.style.height = '100%'; el.textContent = i.icon;
                 el.setAttribute('data-tooltip-html', i.getTooltipHTML());
                 el.onclick = () => {
-                    if (this.inventory.length < 15) { this.equipment[k] = null; this.inventory.push(i); this.renderEquipment(); this.renderInventory(); }
+                    if (this.inventory.length < 20) { this.equipment[k] = null; this.inventory.push(i); this.renderEquipment(); this.renderInventory(); }
                 };
                 div.appendChild(el);
             }
         });
         const s = this.calculateStats();
-        // Update stats summary localization
-        document.getElementById('stat-bonus-dmg').textContent = s.incDmg;
+        // Update stats summary localization - NO DECIMALS
+        document.getElementById('stat-bonus-dmg').textContent = Math.floor(s.incDmg);
         document.getElementById('stat-flat-dmg').textContent = Math.floor(this.char.baseDmg); // Approximation
-        document.getElementById('stat-crit-chance').textContent = s.critChance;
+        document.getElementById('stat-crit-chance').textContent = Math.floor(s.critChance);
     }
 
     updateUI() { document.getElementById('score').textContent = this.damage.toLocaleString(); }
-
     playPunchAnim() { this.sandbag.classList.remove('hit'); void this.sandbag.offsetWidth; this.sandbag.classList.add('hit'); playSound('hit'); }
-
     showDamageNumber(x, y, v, c, color) {
         const el = document.createElement('div'); el.className = `damage-text ${c ? 'crit' : ''}`; el.textContent = v;
         el.style.left = (x + (Math.random() - 0.5) * 40) + 'px'; el.style.top = (y - 50) + 'px';
