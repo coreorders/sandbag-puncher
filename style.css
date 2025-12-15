@@ -367,6 +367,19 @@ h1 {
     image-rendering: pixelated;
     /* Crisp pixel art */
     animation: bounce 1s infinite alternate;
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.arrow {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    pointer-events: none;
+    z-index: 5;
+    background: none !important;
+    border: none !important;
 }
 
 @keyframes bounce {
