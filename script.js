@@ -286,6 +286,16 @@ class Game {
         document.getElementById('btn-open-shop').onclick = () => shopModal.classList.remove('hidden');
         document.getElementById('btn-close-shop').onclick = () => shopModal.classList.add('hidden');
 
+        // Mobile Panel Toggle
+        const mobileToggle = document.getElementById('mobile-panel-toggle');
+        const sidePanel = document.getElementById('side-panel');
+        if (mobileToggle) {
+            mobileToggle.onclick = () => {
+                const isActive = sidePanel.classList.toggle('active');
+                mobileToggle.textContent = isActive ? '❌' : '🎒';
+            };
+        }
+
         document.querySelectorAll('#loot-filter input').forEach(cb => {
             cb.onchange = () => this.renderDrops();
         });

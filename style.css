@@ -912,6 +912,7 @@ h1 {
 }
 
 /* ---- MEDIA QUERIES FOR MOBILE ---- */
+/* ---- MEDIA QUERIES FOR MOBILE ---- */
 @media screen and (max-width: 768px) {
     #main-wrapper {
         flex-direction: column;
@@ -921,40 +922,106 @@ h1 {
         max-width: none;
     }
 
+    /* 1. Hide Title */
+    h1 {
+        display: none;
+    }
+
+    /* 2. Compact Game Area */
     #game-area {
         flex: 1;
-        /* Take remaining space */
-        min-height: 50vh;
-        border-right: none;
-        border-bottom: 2px solid #333;
+        width: 100%;
+        height: 100%;
+        border: none;
+        overflow: hidden;
     }
 
+    /* 3. Hide Side Panel by Default (Toggleable) */
     #side-panel {
-        flex: 1;
-        /* Take remaining space */
-        min-width: 0;
-        max-height: 50vh;
-        padding: 10px;
+        display: none;
+        /* JS will toggle 'active' class to flex */
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 2000;
+        overflow-y: auto;
+        padding-top: 60px;
+        /* Space for close btn */
     }
 
+    #side-panel.active {
+        display: flex;
+    }
+
+    /* 4. Floating Menu Button */
+    #mobile-panel-toggle {
+        display: block;
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        z-index: 2001;
+        font-size: 2rem;
+        background: rgba(0, 0, 0, 0.5);
+        border: 2px solid #555;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        color: #fff;
+        cursor: pointer;
+    }
+
+    /* 5. Sandbag Controls Smaller */
+    #sandbag-controls {
+        gap: 2px;
+        transform: scale(0.9);
+    }
+
+    .lvl-btn {
+        padding: 5px;
+        font-size: 0.7rem;
+    }
+
+    /* 6. Move Player Stats to Bottom */
+    #char-info {
+        position: fixed;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 90%;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 5px;
+        border-radius: 10px;
+        z-index: 50;
+    }
+
+    #xp-bar-container {
+        width: 100%;
+    }
+
+    /* Adjust Layout */
     #sandbag-container {
-        padding-bottom: 20px;
+        align-items: flex-start;
+        /* Move sandbag up slightly */
+        padding-top: 20vh;
     }
 
-    h1 {
-        font-size: 1.5rem;
+    #sandbag {
+        transform: scale(0.8);
+        /* Slightly smaller sandbag */
     }
 
-    #inventory-grid {
-        grid-template-columns: repeat(5, 1fr);
-        height: auto;
+    .damage-text {
+        font-size: 1.5rem !important;
     }
 
-    .slot,
-    .item {
-        width: 12vw;
-        height: 12vw;
-        max-width: 50px;
-        max-height: 50px;
+    .damage-text.crit {
+        font-size: 2.5rem !important;
     }
+}
+
+/* Default state for toggle button on desktop */
+#mobile-panel-toggle {
+    display: none;
 }
