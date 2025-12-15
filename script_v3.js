@@ -170,22 +170,74 @@ class AffixSystem {
         item.baseDamage = sandbagLevel * 3;
 
         // Unique Roll
-        if (type === 'weapon' && Math.random() < 0.002) { // 0.2% total for uniques
-            if (Math.random() < 0.5) {
-                item.name = "골아일체"; // Bone Unity
-                item.rarity = "unique";
-                item.icon = "☠️";
-                item.baseDamage *= 1.5;
-                item.affixes = [{ stat: 'uniqueBoneUnity', value: 1, tier: 0 }];
-            } else {
-                item.name = "장수말벌침"; // Giant Hornet Stinger
-                item.rarity = "unique";
-                item.icon = "🐝";
-                item.baseDamage *= 1.2;
-                const extraDuration = getRandomInt(-50, 150);
-                item.affixes = [{ stat: 'uniqueHornet', value: extraDuration, tier: 0 }];
+        const uniqueRoll = Math.random();
+        // Base unique chance 0.2% -> Increased slightly to accommodate more items or keep same?
+        // User asked for "Awl" to have higher drop rate.
+        // Let's say: Normal Unique Chance 0.2%. If hit, pick which unique.
+        // Or: 
+        // 0.1% Bone Unity
+        // 0.1% Hornet
+        // 0.3% Awl (Higher)
+        // 0.1% Drill
+        // 0.05% Absurdity (Rare?) -> User didn't specify rarity, just "Unique".
+
+        // Let's use a flat check for ANY unique first, then weight them.
+        // Total Unique Chance = ~0.6%?
+
+        if (type === 'weapon') {
+            if (Math.random() < 0.006) { // 0.6% Chance
+                const roll = Math.random();
+                if (roll < 0.5) { // 50% of Uniques = Awl (High Rate)
+                    item.name = "송곳"; // Awl
+                    item.rarity = "unique";
+                    item.icon = "📍";
+                    item.baseDamage = 1; // Fixed 1
+                    item.affixes = [{ stat: 'uniqueAwl', value: 1, tier: 0 }];
+                } else if (roll < 0.7) {
+                    item.name = "전동드릴"; // Electric Drill
+                    item.rarity = "unique";
+                    item.icon = "🔩";
+                    item.baseDamage = 1; // Fixed 1
+                    const hits = getRandomInt(5, 10);
+                    item.affixes = [{ stat: 'uniqueDrill', value: hits, tier: 0 }];
+                } else if (roll < 0.85) {
+                    item.name = "골아일체"; // Bone Unity
+                    item.rarity = "unique";
+                    item.icon = "☠️";
+                    item.baseDamage *= 1.5;
+                    item.affixes = [{ stat: 'uniqueBoneUnity', value: 1, tier: 0 }];
+                } else {
+                    item.name = "장수말벌침"; // Giant Hornet Stinger
+                    item.rarity = "unique";
+                    item.icon = "🐝";
+                    item.baseDamage *= 1.2;
+                    const extraDuration = getRandomInt(-50, 150);
+                    item.affixes = [{ stat: 'uniqueHornet', value: extraDuration, tier: 0 }];
+                }
+
+                // item.generateName(); // FIX: Do not overwrite unique name
+                return item;
             }
-            return item;
+        } else if (type === 'ring') {
+            if (Math.random() < 0.003) { // 0.3% Chance
+                const roll = Math.random();
+                if (roll < 0.5) {
+                    item.name = "해골폭풍"; // Skeleton Storm
+                    item.rarity = "unique";
+                    item.icon = "🌪️";
+                    // No base damage valid for ring usually? But let's assume standard stats + unique effect
+                    const spd = getRandomInt(30, 80);
+                    item.affixes = [{ stat: 'uniqueSkelStorm', value: spd, tier: 0 }];
+                } else {
+                    item.name = "어처구니"; // Absurdity
+                    item.rarity = "unique";
+                    item.icon = "🪵"; // Millstone Handle (Wooden stick)
+                    item.baseDamage = 50000;
+                    item.affixes = []; // Just raw damage
+                }
+                // item.generateName(); // FIX: Do not overwrite unique name
+                return item;
+            }
         }
 
         const config = PROBABILITIES[type];
@@ -254,12 +306,22 @@ class Item {
             } else if (this.name === "장수말벌침") {
                 let dur = this.affixes[0].value;
                 html += `<div class='affix-line unique'>고유 효과:<br>중독 확률 +100%<br>중독 데미지 +100%<br>중독 지속시간 ${dur > 0 ? '+' : ''}${dur}%</div>`;
+            } else if (this.name === "송곳") {
+                html += `<div class='affix-line unique'>고유 효과:<br>10% 확률로 적 전체 체력 1% 피해<br>기본공격력 1</div>`;
+            } else if (this.name === "전동드릴") {
+                let hits = this.affixes[0].value;
+                html += `<div class='affix-line unique'>고유 효과:<br>초당 ${hits}회 자동 공격<br>기본공격력 1</div>`;
+            } else if (this.name === "해골폭풍") {
+                let spd = this.affixes[0].value;
+                html += `<div class='affix-line unique'>고유 효과:<br>해골 궁수 데미지 5배<br>해골 궁수 공격속도 +${spd}%</div>`;
+            } else if (this.name === "어처구니") {
+                html += `<div class='affix-line unique'>고유 효과:<br>깡 공격력 그 자체<br>기본공격력 +50,000</div>`;
             }
         }
         if (this.baseDamage > 0) html += `<div class='affix-line'>기본 공격력: +${Math.floor(this.baseDamage)}</div>`;
 
         this.affixes.forEach(a => {
-            if (a.stat === 'uniqueBoneUnity' || a.stat === 'uniqueHornet') return;
+            if (a.stat.startsWith('unique')) return;
             let txt = '';
             // Stat Formatting: Integers Only
             if (a.stat === 'incDmg') txt = `물리 피해 +${a.value}%`;
@@ -508,6 +570,24 @@ class Game {
                     const data = JSON.parse(e.dataTransfer.getData('text/plain'));
                     if (data.source === 'inventory') {
                         this.equip(this.inventory[data.index], data.index, cfg.key);
+                    } else if (data.source === 'drop') {
+                        // FIX: Allow direct equip from ground
+                        if (this.inventory.length >= 20) return alert("인벤토리가 가득 찼습니다!");
+                        const item = this.drops[data.index];
+                        if (!item) return;
+
+                        // Loot it first
+                        this.drops.splice(data.index, 1);
+                        this.inventory.push(item);
+                        const newIdx = this.inventory.length - 1;
+
+                        // Then Equip
+                        this.equip(item, newIdx, cfg.key);
+                        this.renderDrops();
+                        // renderInventory called by equip usually? 
+                        // equip() calls renderInventory() and updateStats().
+                        // But wait, equip() takes item from inventory.
+                        // I just put it in inventory. So it's safe.
                     }
                 } catch (err) { }
             };
@@ -617,7 +697,13 @@ class Game {
 
             // Right Collision
             if (left + w > screenW) {
-                left = screenW - w - 10; // 10px padding from right edge
+                left = screenW - w - 10;
+            }
+
+            // Bottom Collision (Fix: Move above cursor if clipping)
+            const screenH = window.innerHeight;
+            if (top + h > screenH) {
+                top = y - h - 15; // Move above
             }
 
             this.tooltip.style.left = left + 'px';
@@ -628,13 +714,16 @@ class Game {
     punch(e) {
         if (!this.gameRunning) return;
 
-        // Hide tooltip on punch immediately
-        this.tooltip.style.display = 'none';
+        // Hide tooltip on punch only if manual click (e exists)
+        if (e && this.tooltip.style.display === 'block') {
+            this.tooltip.style.display = 'none';
+        }
 
         const stats = this.calculateStats();
 
         let weaponBase = 0;
-        ['weapon1', 'weapon2'].forEach(k => { if (this.equipment[k]) weaponBase += this.equipment[k].baseDamage; });
+        // FIX: Sum base damage from ALL equipped items (including Absurdity Ring)
+        ['weapon1', 'weapon2', 'ring1', 'ring2'].forEach(k => { if (this.equipment[k]) weaponBase += this.equipment[k].baseDamage; });
 
         let randBase = Math.floor(Math.random() * 11 + 10);
         let baseDmg = randBase + this.char.baseDmg + weaponBase;
@@ -645,6 +734,14 @@ class Game {
         if (isCrit) totalDmg *= (stats.critMulti / 100);
 
         this.lastTotalDmg = totalDmg;
+
+        // Awl Effect: 10% chance for 1% Enemy HP
+        if (stats.awl && Math.random() < 0.1) {
+            const proc = Math.ceil(this.sandbagMaxHp * 0.01);
+            totalDmg += proc;
+            // Visual feedback for Awl?
+            this.showDamageNumber(e ? e.clientX : null, e ? e.clientY : null, "📍" + proc, true, '#ff0000');
+        }
 
         this.dealDamage(totalDmg, isCrit, e ? e.clientX : null, e ? e.clientY : null);
 
@@ -730,6 +827,8 @@ class Game {
             this.skeletons = 1;
             const el = document.createElement('div');
             el.className = 'skeleton';
+            // Use Image
+            el.innerHTML = `<img src="skeleton_archer.png" alt="Skeleton" style="width:100%; height:100%; object-fit:contain;">`;
             document.getElementById('minion-container').appendChild(el);
         }
         if (!active && this.skeletons > 0) {
@@ -741,16 +840,34 @@ class Game {
     skeletonShoot() {
         if (!this.gameRunning || !this.skeletons) return;
         const stats = this.calculateStats();
+        // Base Tick is 1000ms. If speed +50%, we add 1500ms worth of progress per tick?
+        // Or reduce threshold?
+        // Let's increment timer by 1000, and check against `1000 / (1 + speed/100)`.
         this.skelTimer += 1000;
-        const interval = 1000;
-        if (this.skelTimer >= interval) {
-            this.skelTimer = 0;
+
+        // Attack Speed Logic
+        let spdMult = 1;
+        if (stats.skelStorm) spdMult += (stats.skelSpeedBonus / 100);
+        const threshold = 1000 / spdMult;
+
+        if (this.skelTimer >= threshold) {
+            this.skelTimer -= threshold; // Keep remainder
+
             let dmg = stats.boneUnity ? this.lastTotalDmg : 10 * (1 + stats.minionDmg / 100);
+            if (stats.skelStorm) dmg *= 5; // x5 Dmg
+
             const arrows = stats.boneUnity ? 1 : stats.skelArrows;
             for (let i = 0; i < arrows; i++) {
                 setTimeout(() => {
                     const arrow = document.createElement('div');
                     arrow.className = 'arrow';
+                    // Use Image for Arrow
+                    arrow.innerHTML = `<img src="arrow.png" alt="Arrow" style="width:100%; height:100%; object-fit:contain; transform: rotate(135deg);">`;
+                    // Note: Rotate 135deg? Original CSS arrow might have been rotated.
+                    // Assuming arrow.png points UP or RIGHT. Usually pixel art arrows point UP-RIGHT.
+                    // Let's assume standard orientation. If needed, I'll adjust rotation.
+                    // User said "arrow.png". Most likely a standard arrow.
+
                     const skel = document.querySelector('.skeleton');
                     const sb = document.getElementById('sandbag');
                     if (skel && sb) {
@@ -772,10 +889,16 @@ class Game {
     }
 
     calculateStats() {
-        let s = { incDmg: 0, atkSpd: 0, critChance: 0, critMulti: 200, projectiles: 0, weaponEffectScale: 0, poisonPercent: 0, hasSkeleton: false, minionDmg: 0, skelArrows: 1, poisonChance: 0, boneUnity: false, poisonDurationInfo: 0 };
+        let s = {
+            incDmg: 0, atkSpd: 0, critChance: 0, critMulti: 200, projectiles: 0,
+            weaponEffectScale: 0, poisonPercent: 0, hasSkeleton: false, minionDmg: 0,
+            skelArrows: 1, poisonChance: 0, boneUnity: false, poisonDurationInfo: 0,
+            drillRate: 0, awl: false, skelStorm: false, skelSpeedBonus: 0
+        };
         ['ring1', 'ring2'].forEach(k => { var i = this.equipment[k]; if (i) i.affixes.forEach(a => { if (a.stat === 'weaponEffectScale') s.weaponEffectScale += a.value; }); });
         ['weapon1', 'weapon2', 'ring1', 'ring2'].forEach(k => {
             const i = this.equipment[k]; if (!i) return;
+            // Absurdity handles itself via baseDamage
             let scale = (i.type === 'weapon' ? 1 + s.weaponEffectScale / 100 : 1);
             i.affixes.forEach(a => {
                 let v = a.value * scale;
@@ -792,8 +915,26 @@ class Game {
                 if (a.stat === 'uniqueHornet') {
                     s.poisonChance += 100; s.poisonPercent += 100; s.poisonDurationInfo += a.value;
                 }
+                if (a.stat === 'uniqueDrill') s.drillRate += a.value;
+                if (a.stat === 'uniqueAwl') s.awl = true;
+                if (a.stat === 'uniqueSkelStorm') { s.skelStorm = true; s.skelSpeedBonus += a.value; }
             });
         });
+
+        // Handle Electric Drill Loop
+        if (s.drillRate > 0) {
+            if (!this.drillInterval || this.drillRate !== this.currentDrillRate) {
+                if (this.drillInterval) clearInterval(this.drillInterval);
+                this.currentDrillRate = s.drillRate;
+                // e.g. 5 hits/sec = 200ms
+                this.drillInterval = setInterval(() => {
+                    if (this.gameRunning) this.punch(null); // Auto punch
+                }, 1000 / s.drillRate);
+            }
+        } else {
+            if (this.drillInterval) { clearInterval(this.drillInterval); this.drillInterval = null; this.currentDrillRate = 0; }
+        }
+
         return s;
     }
 
@@ -871,8 +1012,31 @@ class Game {
                     // Check Drop
                     const touch = e.changedTouches[0];
                     const target = document.elementFromPoint(touch.clientX, touch.clientY);
-                    if (target && target.closest('#inventory-grid')) {
-                        this.lootItem(this.draggingDropIdx);
+
+                    if (target) {
+                        const equipSlot = target.closest('.slot[data-equippable]');
+                        const invGrid = target.closest('#inventory-grid');
+
+                        if (invGrid) {
+                            this.lootItem(this.draggingDropIdx);
+                        } else if (equipSlot) {
+                            // FIX: Mobile Drop to Equip from Ground
+                            if (this.inventory.length >= 20) {
+                                alert("인벤토리가 가득 찼습니다!");
+                            } else {
+                                const item = this.drops[this.draggingDropIdx];
+                                if (item) {
+                                    const key = equipSlot.getAttribute('data-key');
+                                    // Loot first
+                                    this.drops.splice(this.draggingDropIdx, 1);
+                                    this.inventory.push(item);
+                                    const newIdx = this.inventory.length - 1;
+                                    // Equip
+                                    this.equip(item, newIdx, key);
+                                    this.renderDrops();
+                                }
+                            }
+                        }
                     }
                     this.draggingDropIdx = null;
                 };
@@ -935,6 +1099,14 @@ class Game {
                     } else {
                         // It was a Tap
                         const now = Date.now();
+                        // FIX: Check delete mode on Tap
+                        if (this.deleteMode) {
+                            this.inventory.splice(i, 1);
+                            this.renderInventory();
+                            this.draggingItemIdx = null;
+                            return;
+                        }
+
                         if (this.lastTapTime && (now - this.lastTapTime < 300) && this.lastTapItemIdx === i) {
                             // DOUBLE TAP -> Auto Equip
                             this.autoEquip(item, i);
