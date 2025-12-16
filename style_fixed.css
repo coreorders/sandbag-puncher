@@ -1,4 +1,4 @@
-:root {
+Ôªø:root {
     --bg-color: #1a1a1a;
     --text-color: #f0f0f0;
     --accent-color: #ff3e3e;
@@ -1198,7 +1198,7 @@ h3 {
 
 /* Silhouette for Empty Slots (High Contrast) */
 .weapon-slot .slot-content:empty::before {
-    content: '?ó°Ô∏?;
+    content: '?Îø†Êà™?;
     position: absolute;
     top: 50%;
     left: 50%;
@@ -1210,7 +1210,7 @@ h3 {
 }
 
 .ring-slot .slot-content:empty::before {
-    content: '?íç';
+    content: '?Î≠æ';
     position: absolute;
     top: 50%;
     left: 50%;
@@ -1656,4 +1656,3 @@ h3 {
     white-space: pre-wrap;
     text-align: left;
 }
- .hidden { display: none !important; }

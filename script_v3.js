@@ -1,7 +1,19 @@
+// --- DEBUG LOGGER --- (Added for diagnosis)
+const log = () => { }; // Silence logs
+// window.onerror = function (msg, url, line) { log('<span style="color:red">ERROR: ' + msg + ' @ Line ' + line + '</span>'); };
+// console.log = function (m) { log(m); };
+log('Script v3 Loading...');
+
 // --- Audio Context & BGM ---
 const AudioContext = window.AudioContext || window.webkitAudioContext;
-const audioCtx = new AudioContext();
-let isMuted = false;
+let audioCtx;
+try { audioCtx = new AudioContext(); log('Audio Init OK'); } catch (e) { log('Audio Init Failed: ' + e); }
+log('Defining Game Class...');
+
+// Mute Globals
+let isBgmMuted = false;
+let isSfxMuted = false;
+
 let bgmOscillators = [];
 let bgmInterval = null;
 let bgmNoteIndex = 0;
@@ -22,53 +34,35 @@ const MELODY = [
 const startBGM = () => {
     if (bgmInterval) return;
     if (audioCtx.state === 'suspended') audioCtx.resume();
-
-    // Play one note every 400ms approx (adjust logic for rhythm)
-    let nextTime = audioCtx.currentTime;
-
+    // Loop
     bgmInterval = setInterval(() => {
-        if (isMuted) return;
-
+        if (isBgmMuted) return; // Silent but running
+        // ... (Existing BGM Logic)
         const note = MELODY[bgmNoteIndex % MELODY.length];
         bgmNoteIndex++;
-
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.connect(gain);
         gain.connect(audioCtx.destination);
-
-        // Simple Sine for pleasant tone
         osc.type = 'triangle';
-        // Map note name to freq (simple map or just use C major scale math)
-        // Hardcoding helper for C Major scale names above
         let freq = NOTES[note.n] || 440;
         if (note.n === 'C6') freq = 1046.50;
         if (note.n === 'D6') freq = 1174.66;
-
         osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.05, audioCtx.currentTime); // Low volume background
+        gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + note.d);
-
         osc.start(audioCtx.currentTime);
         osc.stop(audioCtx.currentTime + note.d);
-    }, 250); // Speed
+    }, 250);
 };
 
 const stopBGM = () => {
     if (bgmInterval) { clearInterval(bgmInterval); bgmInterval = null; }
 };
 
-const toggleMute = () => {
-    isMuted = !isMuted;
-    const btn = document.getElementById('btn-mute');
-    if (btn) btn.textContent = isMuted ? '🔇' : '🔊';
-    if (!isMuted) {
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-    }
-};
-
 const playSound = (type) => {
-    if (isMuted) return;
+    if (isSfxMuted) return;
+    // ... (Existing SFX Logic)
     if (audioCtx.state === 'suspended') audioCtx.resume();
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
@@ -318,6 +312,10 @@ class Item {
                 html += `<div class='affix-line unique'>고유 효과:<br>해골 궁수 데미지 5배<br>해골 궁수 공격속도 +${spd}%</div>`;
             } else if (this.name === "어처구니") {
                 html += `<div class='affix-line unique'>고유 효과:<br>깡 공격력 그 자체<br>기본공격력 +50,000</div>`;
+            } else if (this.name === "악마 샌드백") {
+                html += `<div class='affix-line unique'>고유 효과:<br>악마의 힘<br>기본공격력 +666</div>`;
+            } else if (this.name === "오목거울 반지") {
+                html += `<div class='affix-line unique'>고유 효과:<br>반대쪽 반지 효과 3배 증폭</div>`;
             }
         }
         if (this.baseDamage > 0) html += `<div class='affix-line'>기본 공격력: +${Math.floor(this.baseDamage)}</div>`;
@@ -363,6 +361,7 @@ class Character {
 
 class Game {
     constructor() {
+        log('Game Constructor Start');
         this.startTime = Date.now();
         this.char = new Character();
         this.sandbagLevel = 1;
@@ -413,6 +412,7 @@ class Game {
     }
 
     initDOM() {
+        log('initDOM Start');
         document.getElementById('btn-prev-lvl').onclick = () => this.changeSandbagLevel(-1);
         document.getElementById('btn-next-lvl').onclick = () => this.changeSandbagLevel(1);
         document.querySelectorAll('.lvl-btn[data-change]').forEach(btn => {
@@ -481,10 +481,7 @@ class Game {
         document.getElementById('btn-buy-weapon').onclick = () => this.buyItem('weapon');
         document.getElementById('btn-buy-ring').onclick = () => this.buyItem('ring');
 
-        document.getElementById('btn-mute').onclick = (e) => {
-            e.preventDefault(); // Prevent focus issues
-            toggleMute();
-        };
+
 
         // Inventory Grid: Drop Target for Loot AND Unequip
         const invGrid = document.getElementById('inventory-grid');
@@ -566,6 +563,30 @@ class Game {
         document.getElementById('btn-info-drops').onclick = (e) => { e.stopPropagation(); this.showDropInfo(); };
         document.getElementById('btn-info-intro').onclick = (e) => { e.stopPropagation(); this.showIntroInfo(); };
         document.getElementById('btn-close-generic').onclick = () => document.getElementById('generic-modal').classList.add('hidden');
+
+        // Punch Listener (Global Background)
+        // Desktop: Click anywhere NOT on interactive elements
+        document.body.addEventListener('mousedown', (e) => {
+            // Ignore if clicking on buttons, inventory, scrollbars (if any), or specific UI panels
+            if (e.target.tagName === 'BUTTON' || e.target.closest('button') || e.target.closest('.interactive') || e.target.closest('.slot')) return;
+            // Also ignore if clicking inside modals (unless we want to close them? no, close btn exists)
+            if (e.target.closest('.shop-content')) return;
+
+            this.punch(e);
+        });
+
+        // Mobile: Touch anywhere
+        document.body.addEventListener('touchstart', (e) => {
+            // Check first touch
+            const t = e.changedTouches[0];
+            if (t.target.tagName === 'BUTTON' || t.target.closest('button') || t.target.closest('.interactive') || t.target.closest('.slot') || t.target.closest('.shop-content')) return;
+
+            e.preventDefault(); // Stop zoom/scroll on game area
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const touch = e.changedTouches[i];
+                this.punch({ clientX: touch.clientX, clientY: touch.clientY });
+            }
+        }, { passive: false });
     }
 
     initSlots() {
@@ -636,18 +657,38 @@ class Game {
     }
 
     init() {
-        this.sandbag.addEventListener('mousedown', (e) => this.punch(e));
-        // Touch support for punching to avoid zoom/delay
-        this.sandbag.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            for (let i = 0; i < e.changedTouches.length; i++) {
-                this.punch(e.changedTouches[i]);
-            }
-        }, { passive: false });
+        // HIT AREA: Sandbag Container (Whole Area)
+        const hitArea = document.getElementById('sandbag-container');
+        if (hitArea) {
+            hitArea.addEventListener('mousedown', (e) => {
+                // Ignore clicks on buttons/modals if they bubble up (though buttons usually stopProp)
+                if (e.target.closest('button') || e.target.closest('.slot') || e.target.closest('.modal')) return;
+                this.punch(e);
+            });
+            hitArea.addEventListener('touchstart', (e) => {
+                if (e.target.closest('button') || e.target.closest('.slot') || e.target.closest('.modal')) return;
+                e.preventDefault();
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    this.punch(e.changedTouches[i]);
+                }
+            }, { passive: false });
+        }
 
         this.updateSandbagUI();
         this.updateShopUI();
         this.checkIntro();
+
+        // Audio Settings Init
+        const chkBgm = document.getElementById('chk-bgm');
+        const chkSfx = document.getElementById('chk-sfx');
+        if (chkBgm) {
+            chkBgm.onchange = (e) => { isBgmMuted = !e.target.checked; };
+            isBgmMuted = !chkBgm.checked;
+        }
+        if (chkSfx) {
+            chkSfx.onchange = (e) => { isSfxMuted = !e.target.checked; };
+            isSfxMuted = !chkSfx.checked;
+        }
     }
 
     toggleDeleteMode() {
@@ -664,8 +705,27 @@ class Game {
         if (newLvl !== this.sandbagLevel || delta === 0) {
             this.sandbagLevel = newLvl;
             this.sandbagMaxHp = this.sandbagLevel * 100;
-            // Boss HP x1000
-            if (this.sandbagLevel === 1000) this.sandbagMaxHp *= 1000;
+            // Arithmetic Progression > 3000
+            // Logic: Level 3000 = 300,000 HP.
+            // After 3000, HP increases by (Level-3000) * 10 + 100 per level?
+            // User request: "Sandbag Level > 3000 : HP increases by arithmetic sequence"
+            // Interpreted as: The *difference* grows.
+            if (this.sandbagLevel > 3000) {
+                const deltaLvl = this.sandbagLevel - 3000;
+                // Base HP at 3000 = 300000
+                // Sum of arithmetic seq 1..deltaLvl with d=100?
+                // Let's make it simple but quadratic:
+                // Extra HP = deltaLvl * 100 * (deltaLvl/2 ?) -> No, that's complex.
+                // Simple Arithmetic Progression of MaxHP? No, that's what it is now.
+                // Let's assume user wants: Diff = 100 + (n * 10).
+                // HP = 300000 + (100 * delta) + (10 * delta * (delta+1) / 2)
+                const extra = 10 * deltaLvl * (deltaLvl + 1) / 2;
+                this.sandbagMaxHp = 300000 + (deltaLvl * 100) + extra;
+            }
+
+            // Boss HP x1000 (Applied on top if Boss Logic used, but Boss is fixed 1000?)
+            // User logic: Boss is at Level 1000 (Specific Mode).
+            if (this.sandbagLevel === 1000) this.sandbagMaxHp = 1000 * 100 * 1000;
 
             this.sandbagHp = this.sandbagMaxHp;
             this.updateSandbagUI();
@@ -677,7 +737,13 @@ class Game {
         document.getElementById('sandbag-level-display').textContent = `샌드백 Lv.${this.sandbagLevel}`;
         this.updateHpBar();
         if (this.sandbagLevel === 1000) this.sandbag.classList.add('devil');
-        else this.sandbag.classList.remove('devil');
+        else if (this.sandbagLevel >= 3000) {
+            this.sandbag.classList.add('sandbag-high-level');
+            this.sandbag.classList.remove('devil');
+        } else {
+            this.sandbag.classList.remove('devil');
+            this.sandbag.classList.remove('sandbag-high-level');
+        }
     }
 
     updateShopUI() { document.getElementById('shop-cost').textContent = this.sandbagLevel * 100; }
@@ -766,8 +832,18 @@ class Game {
         if (stats.awl && Math.random() < 0.1) {
             const proc = Math.ceil(this.sandbagMaxHp * 0.01);
             totalDmg += proc;
-            // Visual feedback for Awl?
             this.showDamageNumber(e ? e.clientX : null, e ? e.clientY : null, "📍" + proc, true, '#ff0000');
+        }
+
+        // Demon Sandbag Effect: 1% Chance for 1~100M Damage (Override)
+        if (stats.demonSandbag && Math.random() < 0.01) {
+            const jackpot = getRandomInt(1, 100000000);
+            totalDmg = jackpot; // Override or Add? Usually Jackpot overrides.
+            // But if normal dmg is high, it might be a loss? 
+            // 100M is huge. Normal dmg is low. Assuming Override is benefit.
+            // Let's make it additive to be safe? "Give 1~100m damage".
+            // Since it's a specific effect, let's allow it to Set the damage.
+            this.showDamageNumber(e ? e.clientX : null, e ? e.clientY : null, "👿" + jackpot.toLocaleString(), true, '#ff0000');
         }
 
         this.dealDamage(totalDmg, isCrit, e ? e.clientX : null, e ? e.clientY : null);
@@ -809,6 +885,7 @@ class Game {
 
     killSandbag() {
         if (this.sandbagLevel === 1000) { // BOSS KILL
+            if (!this.gameRunning) return; // Prevent double trigger
             this.gameRunning = false;
             clearInterval(this.poisonInterval);
             clearInterval(this.skelInterval);
@@ -816,6 +893,7 @@ class Game {
             const timeSec = ((Date.now() - this.startTime) / 1000).toFixed(1);
             document.getElementById('victory-time').textContent = timeSec + '초';
             document.getElementById('victory-damage').textContent = this.damage.toLocaleString();
+            this.spawnBossDrop(); // Drop Unique after win
             return;
         }
 
@@ -949,14 +1027,50 @@ class Game {
             });
         });
 
+
+        // Concave Mirror Ring Logic (Post-Calculation)
+        const r1 = this.equipment.ring1;
+        const r2 = this.equipment.ring2;
+
+        const applyMirror = (sourceRing, targetRing) => {
+            if (sourceRing && sourceRing.name === "오목거울 반지" && targetRing) {
+                let scale = 1;
+                targetRing.affixes.forEach(a => {
+                    let v = a.value * scale * 2; // Add 2x (Total 3x)
+                    if (a.stat === 'incDmg') s.incDmg += v;
+                    if (a.stat === 'critChance') s.critChance += v;
+                    if (a.stat === 'critMulti') s.critMulti += v;
+                    if (a.stat === 'projectiles') s.projectiles += v;
+                    if (a.stat === 'poisonDmg') s.poisonPercent += v;
+                    if (a.stat === 'poisonChance') s.poisonChance += v;
+                    if (a.stat === 'summonSkeleton') s.hasSkeleton = true;
+                    if (a.stat === 'minionDmg') s.minionDmg += v;
+                    if (a.stat === 'skeletonArrow') s.skelArrows += v;
+                    if (a.stat === 'weaponEffectScale') s.weaponEffectScale += v;
+                    if (a.stat === 'uniqueBoneUnity') s.boneUnity = true;
+                    if (a.stat === 'uniqueHornet') { s.poisonChance += 200; s.poisonPercent += 200; s.poisonDurationInfo += a.value * 2; }
+                    if (a.stat === 'uniqueAwl') s.awl = true;
+                    if (a.stat === 'uniqueDrill') s.drillRate += a.value * 2;
+                    if (a.stat === 'uniqueSkelStorm') { s.skelStormCount += 2; s.skelSpeedBonus += a.value * 2; }
+                });
+            }
+        };
+
+        applyMirror(r1, r2);
+        applyMirror(r2, r1);
+
+        // Demon Sandbag Flag
+        ['weapon1', 'weapon2'].forEach(k => {
+            if (this.equipment[k] && this.equipment[k].name === "악마 샌드백") s.demonSandbag = true;
+        });
+
         // Handle Electric Drill Loop
         if (s.drillRate > 0) {
             if (!this.drillInterval || this.drillRate !== this.currentDrillRate) {
                 if (this.drillInterval) clearInterval(this.drillInterval);
                 this.currentDrillRate = s.drillRate;
-                // e.g. 5 hits/sec = 200ms
                 this.drillInterval = setInterval(() => {
-                    if (this.gameRunning) this.punch(null); // Auto punch
+                    if (this.gameRunning) this.punch(null);
                 }, 1000 / s.drillRate);
             }
         } else {
@@ -1288,6 +1402,23 @@ class Game {
         });
     }
 
+    updateDPS() {
+        const now = Date.now();
+        const cutoff = now - 60000;
+        // Prune old
+        while (this.damageHistory.length > 0 && this.damageHistory[0].t < cutoff) {
+            this.damageHistory.shift();
+        }
+
+        // Sum
+        let sum = 0;
+        for (let i = 0; i < this.damageHistory.length; i++) sum += this.damageHistory[i].v;
+
+        // Display
+        const el = document.getElementById('dps');
+        if (el) el.textContent = sum.toLocaleString();
+    }
+
     updateUI() {
         document.getElementById('score').textContent = this.damage.toLocaleString();
         this.updateDPS();
@@ -1433,17 +1564,33 @@ L은 네줄짜리옵션 혹은 유니크아이템만 보이게 합니다.`;
         }
     }
 
-    // 4. DPS Meter
-    updateDPS() {
-        const now = Date.now();
-        // Remove entries older than 60s
-        while (this.damageHistory.length > 0 && this.damageHistory[0].t < now - 60000) {
-            this.damageHistory.shift();
+    spawnBossDrop() {
+        // 50% Demon Sandbag, 50% Concave Mirror
+        const isDemon = Math.random() < 0.5;
+        const item = new Item(isDemon ? 'weapon' : 'ring');
+        item.rarity = 'unique';
+        item.level = 1000;
+
+        if (isDemon) {
+            item.name = "악마 샌드백";
+            item.icon = "👿";
+            item.baseDamage = 666;
+            item.affixes = [{ stat: 'uniqueDemonSandbag', value: 1, tier: 0 }];
+        } else {
+            item.name = "오목거울 반지";
+            item.icon = "🪞"; // Mirror
+            item.affixes = [{ stat: 'uniqueConcaveMirror', value: 3, tier: 0 }];
         }
-        // Sum
-        const total = this.damageHistory.reduce((s, x) => s + x.v, 0);
-        document.getElementById('dps-meter-value').textContent = total.toLocaleString();
+
+        // Push direct to drops
+        this.drops.push(item);
+        playSound('drop_unique');
+        this.renderDrops();
     }
 }
 
-window.addEventListener('DOMContentLoaded', () => new Game());
+window.addEventListener('DOMContentLoaded', () => {
+    log('DOM Loaded. Creating Game...');
+    try { new Game(); } catch (e) { log('Game Init Failed: ' + e.message); }
+});
+log('Script EOF Reached');

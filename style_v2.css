@@ -1,4 +1,4 @@
-:root {
+Ôªø:root {
     --bg-color: #1a1a1a;
     --text-color: #f0f0f0;
     --accent-color: #ff3e3e;
@@ -674,7 +674,7 @@ h1 {
 
 .delete-mode .item::after {
     content: '??;
-    position: absolute;
+ position: absolute;
     font-size: 1.2rem;
     color: red;
     text-shadow: 0 0 2px black;
@@ -1198,7 +1198,7 @@ h3 {
 
 /* Silhouette for Empty Slots (High Contrast) */
 .weapon-slot .slot-content:empty::before {
-    content: '?ó°Ô∏?;
+    content: 'üó°Ô∏è';
     position: absolute;
     top: 50%;
     left: 50%;
@@ -1210,7 +1210,7 @@ h3 {
 }
 
 .ring-slot .slot-content:empty::before {
-    content: '?íç';
+    content: 'üíç';
     position: absolute;
     top: 50%;
     left: 50%;
@@ -1537,6 +1537,7 @@ h3 {
     position: relative;
     z-index: 1;
 }
+
 /* Restoring Lost Styles */
 
 .ground-item {
@@ -1656,4 +1657,11 @@ h3 {
     white-space: pre-wrap;
     text-align: left;
 }
- .hidden { display: none !important; }
+
+.hidden {
+    display: none !important;
+}
+
+.hidden {
+    display: none !important;
+}

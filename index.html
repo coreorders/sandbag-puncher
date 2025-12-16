@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>샌드백 키우기</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style_v2.css">
     <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Do+Hyeon&display=swap" rel="stylesheet">
 </head>
 
@@ -20,13 +20,11 @@
             <div id="char-info">
                 <span id="char-level">Lv.1</span>
                 <span id="gold-display-top" style="margin-left:10px; color:#ffd700; font-size:0.9rem;">0 G</span>
-                <button id="btn-mute"
-                    style="margin-left:auto; background:none; border:none; font-size:1.2rem; cursor:pointer;">🔊</button>
-                <button id="btn-settings"
-                    style="margin-left:10px; background:none; border:none; font-size:1.2rem; cursor:pointer;">⚙️</button>
                 <div id="xp-bar-container">
                     <div id="xp-bar"></div>
                 </div>
+                <button id="btn-settings"
+                    style="margin-left:auto; background:none; border:none; font-size:1.2rem; cursor:pointer;">⚙️</button>
             </div>
 
             <h1>샌드백 키우기</h1> <!-- Title hidden on mobile -->
@@ -37,8 +35,8 @@
                     <span id="score">0</span>
                 </div>
                 <div class="stat">
-                    <span class="label">초당 데미지</span>
-                    <span id="dps">0</span>
+                    <span class="label">최근 1분 데미지</span>
+                    <span id="dpm">0</span>
                 </div>
             </div>
             <!-- Controls -->
@@ -83,10 +81,7 @@
                 <span style="font-size:0.8rem; color:#aaa; margin-right:5px;">게임 설명</span>
                 <button id="btn-info-intro" class="info-btn-small">i</button>
             </div>
-            <div id="dps-meter-container">
-                <span class="label">최근 1분 통계</span>
-                <span id="dps-meter-value">0</span>
-            </div>
+            <!-- DPS Container Removed -->
 
             <!-- BOTTOM SECTION: 3 Columns -->
             <section id="bottom-panel">
@@ -171,8 +166,17 @@
                 <button id="btn-close-settings" class="close-btn">×</button>
             </div>
             <div style="text-align:center; display:flex; gap:10px; justify-content:center; flex-direction:column;">
-                <button id="btn-manual-save" class="game-btn" style="background:#228822; width:100%;">저장하기</button>
-                <button id="btn-manual-load" class="game-btn" style="background:#884422; width:100%;">불러오기</button>
+                <div class="setting-row">
+                    <label>배경음 (BGM)</label>
+                    <input type="checkbox" id="chk-bgm" checked>
+                </div>
+                <div class="setting-row">
+                    <label>효과음 (SFX)</label>
+                    <input type="checkbox" id="chk-sfx" checked>
+                </div>
+                <hr style="border:0; border-top:1px solid #444; margin:10px 0;">
+                <button id="btn-manual-save" class="game-btn full-width" style="margin-bottom:5px;">게임 저장</button>
+                <button id="btn-manual-load" class="game-btn full-width">게임 불러오기</button>
                 <hr style="width:100%; border-color:#444; margin:10px 0;">
                 <button id="btn-info-credits" class="game-btn" style="background:#444; font-size:0.8rem;">제작자
                     정보</button>
@@ -188,7 +192,7 @@
             </div>
             <div style="text-align:center; line-height:1.6; font-size:0.9rem; color:#ccc;">
                 <p>제작자 : 민대식</p>
-                <p>마지막 업데이트 : 2025년 12월 15일</p>
+                <p>마지막 업데이트 : 2025년 12월 16일</p>
                 <p>버그 및 유닉아이디어제보 :<br>ddokddogi@gmail.com</p>
             </div>
         </div>
