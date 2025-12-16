@@ -579,7 +579,9 @@ class Game {
         document.body.addEventListener('touchstart', (e) => {
             // Check first touch
             const t = e.changedTouches[0];
-            if (t.target.tagName === 'BUTTON' || t.target.closest('button') || t.target.closest('.interactive') || t.target.closest('.slot') || t.target.closest('.shop-content')) return;
+            if (t.target.tagName === 'BUTTON' || t.target.tagName === 'INPUT' || t.target.tagName === 'LABEL' ||
+                t.target.closest('button') || t.target.closest('label') || t.target.closest('.interactive') ||
+                t.target.closest('.slot') || t.target.closest('.shop-content')) return;
 
             e.preventDefault(); // Stop zoom/scroll on game area
             for (let i = 0; i < e.changedTouches.length; i++) {
