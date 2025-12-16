@@ -130,7 +130,7 @@ const AFFIX_DATA = {
     },
     ring: {
         prefixes: [
-            { id: 'proj_count', name: '일제사격', stat: 'projectiles', weight: 100, tiers: [{ t: 2, min: 1, max: 1, w: 95 }, { t: 1, min: 2, max: 2, w: 5 }] },
+
             { id: 'weapon_effect', name: '강화의', stat: 'weaponEffectScale', weight: 1000, tiers: [{ t: 5, min: 10, max: 20, w: 5 }, { t: 4, min: 21, max: 30, w: 25 }, { t: 3, min: 31, max: 40, w: 40 }, { t: 2, min: 41, max: 50, w: 25 }, { t: 1, min: 51, max: 60, w: 5 }] },
             { id: 'summon_skel', name: '강령술사의', stat: 'summonSkeleton', weight: 300, tiers: [{ t: 1, min: 1, max: 1, w: 100 }] }
         ],
@@ -401,6 +401,8 @@ class Game {
         this.poisonInterval = setInterval(() => this.tickPoison(), 1000);
         this.skelInterval = setInterval(() => this.skeletonShoot(), 1000);
         this.skelTimer = 0;
+        this.skelTimer = 0;
+        this.updateUI(); // Ensure DPS/Score are shown immediately
         this.gameRunning = true;
     }
 
@@ -827,7 +829,7 @@ class Game {
         ['weapon1', 'weapon2', 'ring1', 'ring2'].forEach(k => { if (this.equipment[k]) weaponBase += this.equipment[k].baseDamage; });
 
         let randBase = Math.floor(Math.random() * 11 + 10);
-        let baseDmg = randBase + this.char.baseDmg + weaponBase;
+        let baseDmg = randBase + this.char.baseDmg + weaponBase + stats.flatDamage;
 
         let totalDmg = baseDmg * (1 + stats.incDmg / 100);
 
@@ -851,7 +853,15 @@ class Game {
             // 100M is huge. Normal dmg is low. Assuming Override is benefit.
             // Let's make it additive to be safe? "Give 1~100m damage".
             // Since it's a specific effect, let's allow it to Set the damage.
-            this.showDamageNumber(e ? e.clientX : null, e ? e.clientY : null, "👿" + jackpot.toLocaleString(), true, '#ff0000');
+
+            let jx = e ? e.clientX : null;
+            let jy = e ? e.clientY : null;
+            if (jx === null) {
+                const rect = this.sandbag.getBoundingClientRect();
+                jx = rect.left + rect.width / 2;
+                jy = rect.top + rect.height / 2;
+            }
+            this.showDamageNumber(jx, jy, "👿" + jackpot.toLocaleString(), true, '#ff0000');
         }
 
         this.dealDamage(totalDmg, isCrit, e ? e.clientX : null, e ? e.clientY : null);
@@ -967,16 +977,16 @@ class Game {
         if (this.skelTimer >= threshold) {
             this.skelTimer -= threshold; // Keep remainder
 
-            let dmg = stats.boneUnity ? this.lastTotalDmg : 10 * (1 + stats.minionDmg / 100);
+            let dmg = (stats.boneUnity ? this.lastTotalDmg : 10) * (1 + stats.minionDmg / 100);
             if (stats.skelStormCount > 0) dmg *= (5 * stats.skelStormCount); // x5 Per Item
 
-            const arrows = stats.boneUnity ? 1 : stats.skelArrows;
+            const arrows = stats.skelArrows;
             for (let i = 0; i < arrows; i++) {
                 setTimeout(() => {
                     const arrow = document.createElement('div');
                     arrow.className = 'arrow';
                     // Use Image for Arrow
-                    arrow.innerHTML = `<img src="arrow.png" alt="Arrow" style="width:100%; height:100%; object-fit:contain; transform: rotate(135deg);">`;
+                    arrow.innerHTML = `<img src="arrow.png" alt="Arrow" style="width:100%; height:100%; object-fit:contain; transform: rotate(45deg);">`;
                     // Note: Rotate 135deg? Original CSS arrow might have been rotated.
                     // Assuming arrow.png points UP or RIGHT. Usually pixel art arrows point UP-RIGHT.
                     // Let's assume standard orientation. If needed, I'll adjust rotation.
@@ -1007,7 +1017,8 @@ class Game {
             incDmg: 0, atkSpd: 0, critChance: 0, critMulti: 200, projectiles: 0,
             weaponEffectScale: 0, poisonPercent: 0, hasSkeleton: false, minionDmg: 0,
             skelArrows: 1, poisonChance: 0, boneUnity: false, poisonDurationInfo: 0,
-            drillRate: 0, awl: false, skelStormCount: 0, skelSpeedBonus: 0
+            drillRate: 0, awl: false, skelStormCount: 0, skelSpeedBonus: 0,
+            flatDamage: 0
         };
         ['ring1', 'ring2'].forEach(k => { var i = this.equipment[k]; if (i) i.affixes.forEach(a => { if (a.stat === 'weaponEffectScale') s.weaponEffectScale += a.value; }); });
         ['weapon1', 'weapon2', 'ring1', 'ring2'].forEach(k => {
@@ -1061,6 +1072,8 @@ class Game {
                     if (a.stat === 'uniqueDrill') s.drillRate += a.value * 2;
                     if (a.stat === 'uniqueSkelStorm') { s.skelStormCount += 2; s.skelSpeedBonus += a.value * 2; }
                 });
+                // Copy Base Damage (Absurdity Support)
+                if (targetRing.baseDamage > 0) s.flatDamage += targetRing.baseDamage * 2;
             }
         };
 
@@ -1411,20 +1424,26 @@ class Game {
     }
 
     updateDPS() {
-        const now = Date.now();
-        const cutoff = now - 60000;
-        // Prune old
-        while (this.damageHistory.length > 0 && this.damageHistory[0].t < cutoff) {
-            this.damageHistory.shift();
+        // Expected DPS (5 Hits)
+        const s = this.calculateStats();
+        let weaponBase = 0;
+        ['weapon1', 'weapon2', 'ring1', 'ring2'].forEach(k => { if (this.equipment[k]) weaponBase += this.equipment[k].baseDamage; });
+        const avgBase = 15 + this.char.baseDmg + weaponBase + s.flatDamage; // 15 is avg of 10~20 rand
+        const avgTotal = avgBase * (1 + s.incDmg / 100);
+        const critFactor = (s.critChance / 100) * (s.critMulti / 100) + (1 - Math.min(s.critChance, 100) / 100);
+        // Demon Jackpot Average: 1% * 50M = 500,000? No, let's stick to standard DPS.
+        // The user asked for "5 clicks average".
+        const avgHit = avgTotal * critFactor;
+        const expected5 = Math.floor(avgHit * 5);
+
+        const dpsEl = document.getElementById('dps');
+        if (dpsEl) {
+            dpsEl.textContent = expected5.toLocaleString();
+            // Hacky label update
+            if (dpsEl.previousElementSibling && dpsEl.previousElementSibling.textContent.includes('1분')) {
+                dpsEl.previousElementSibling.textContent = '예상 데미지 (5타):';
+            }
         }
-
-        // Sum
-        let sum = 0;
-        for (let i = 0; i < this.damageHistory.length; i++) sum += this.damageHistory[i].v;
-
-        // Display
-        const el = document.getElementById('dps');
-        if (el) el.textContent = sum.toLocaleString();
     }
 
     updateUI() {
