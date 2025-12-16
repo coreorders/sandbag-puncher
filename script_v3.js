@@ -4,6 +4,43 @@ const log = () => { }; // Silence logs
 // console.log = function (m) { log(m); };
 log('Script v3 Loading...');
 
+// ============================================
+// [PATCH NOTES CONFIGURATION]
+// 이 아래 텍스트를 수정하여 패치 내역 팝업 내용을 변경하세요.
+// ============================================
+const PATCH_NOTES = `
+---------------------
+25년 12월 16일 오후 11시10분
+
+패치노트 버튼 추가
+버그제보링크 추가
+---------------------
+25년 12월 16일 오후 10시30분
+
+🔧 밸런스 & 로직 수정
+
+골아일체 상향 & 버그 수정: 이제 골아일체 착용 시 '소환수 피해 증가'와 '해골 화살 수' 옵션이 정상적으로적용됩니다.
+
+오목거울 반지 버그 수정: '어처구니' 등의 기본 공격력까지 누락 없이 3배로 적용됩니다.
+
+전동드릴 + 악마 샌드백: 드릴로 자동 공격 시 악마의힘이 발동하지 않던 문제를 수정했습니다.
+
+반지 옵션 제거: 효과가 없던 '투사체 개수' 옵션이 더 이상 반지에서 등장하지 않습니다.
+
+🐛 버그 수정
+해골 궁수 에임 교정: 화살이 이상한 각도로 날아가던 것을 수정하여, 이제 샌드백(오른쪽)을 겨냥합니다.
+
+🎨 UI 및 연출 개선
+DPS 표기 변경: 의미가 모호했던 '최근 1분 데미지'를 삭제하고, '예상 데미지 (5타 평균)'을 도입했습니다.
+
+
+----------------------
+
+
+
+.`;
+// ============================================
+
 // --- Audio Context & BGM ---
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 let audioCtx;
@@ -426,15 +463,25 @@ class Game {
         };
 
         // Shop UI
+        // Shop UI
         const shopModal = document.getElementById('shop-modal');
         document.getElementById('btn-open-shop').onclick = () => shopModal.classList.remove('hidden');
         document.getElementById('btn-close-shop').onclick = () => shopModal.classList.add('hidden');
+
+        // Patch UI
+        const patchModal = document.getElementById('patch-modal');
+        document.getElementById('btn-patch').onclick = () => {
+            document.getElementById('patch-text').textContent = PATCH_NOTES;
+            patchModal.classList.remove('hidden');
+        };
+        document.getElementById('btn-close-patch').onclick = () => patchModal.classList.add('hidden');
 
         // Info UI
         // Settings UI
         const settingsModal = document.getElementById('settings-modal');
         document.getElementById('btn-settings').onclick = () => settingsModal.classList.remove('hidden');
         document.getElementById('btn-close-settings').onclick = () => settingsModal.classList.add('hidden');
+        document.getElementById('btn-bug-report').onclick = () => window.open('https://open.kakao.com/o/gpLMSS6h', '_blank');
 
         // Info UI (Credits Only now)
         const infoModal = document.getElementById('info-modal');
