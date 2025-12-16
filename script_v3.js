@@ -12,6 +12,7 @@ const PATCH_NOTES = `
 ---------------------
 25년 12월 16일 오후 11시15분
 패치노트 버튼이 간혹 중앙에 배치되던 문제 수정.
+패치노트 스크롤 안되는문제 수정
 
 ---------------------
 25년 12월 16일 오후 11시10분
@@ -474,6 +475,9 @@ class Game {
 
         // Patch UI
         const patchModal = document.getElementById('patch-modal');
+        // FIX: Allow Scrolling by stopping propagation to body
+        patchModal.addEventListener('touchstart', e => e.stopPropagation(), { passive: true });
+        patchModal.addEventListener('touchmove', e => e.stopPropagation(), { passive: true });
         document.getElementById('btn-patch').onclick = () => {
             document.getElementById('patch-text').textContent = PATCH_NOTES;
             patchModal.classList.remove('hidden');
