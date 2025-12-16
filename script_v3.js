@@ -808,6 +808,12 @@ class Game {
 
     punch(e) {
         if (!this.gameRunning) return;
+        // Debounce Manual Hits to prevent double-fire
+        if (e) {
+            const now = Date.now();
+            if (now - (this.lastManualPunchTime || 0) < 50) return;
+            this.lastManualPunchTime = now;
+        }
 
         // Hide tooltip on punch only if manual click (e exists)
         if (e && this.tooltip.style.display === 'block') {
@@ -863,7 +869,7 @@ class Game {
         }
     }
 
-    dealDamage(amount, isCrit = false, x = null, y = null) {
+    dealDamage(amount, isCrit = false, x = null, y = null, silent = false) {
         amount = Math.ceil(amount);
         this.damage += amount;
         this.sandbagHp -= amount;
@@ -874,7 +880,7 @@ class Game {
             x = rect.left + Math.random() * rect.width;
             y = rect.top + Math.random() * rect.height;
         }
-        this.showDamageNumber(x, y, amount, isCrit);
+        if (!silent) this.showDamageNumber(x, y, amount, isCrit);
 
         if (this.sandbagHp <= 0) {
             this.killSandbag();
@@ -923,7 +929,7 @@ class Game {
         if (this.poisonInstances.length > 0) {
             const totalDps = this.poisonInstances.reduce((sum, p) => sum + p.dps, 0);
             if (totalDps > 0) {
-                this.dealDamage(totalDps);
+                this.dealDamage(totalDps, false, null, null, true);
                 const rect = this.sandbag.getBoundingClientRect();
                 this.showDamageNumber(rect.left + rect.width / 2, rect.top, Math.ceil(totalDps), false, '#aa00aa');
             }
@@ -1427,7 +1433,7 @@ class Game {
     }
     playPunchAnim() { this.sandbag.classList.remove('hit'); void this.sandbag.offsetWidth; this.sandbag.classList.add('hit'); playSound('hit'); }
     showDamageNumber(x, y, v, c, color) {
-        const el = document.createElement('div'); el.className = `damage-text ${c ? 'crit' : ''}`; el.textContent = v;
+        const el = document.createElement('div'); el.className = `damage-text ${c ? 'crit' : ''}`; el.textContent = v.toLocaleString();
         el.style.left = (x + (Math.random() - 0.5) * 40) + 'px'; el.style.top = (y - 50) + 'px';
         if (color) el.style.color = color;
         document.body.appendChild(el); setTimeout(() => el.remove(), 800);
