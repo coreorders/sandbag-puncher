@@ -1064,7 +1064,7 @@ class Game {
         if (this.skelTimer >= threshold) {
             this.skelTimer -= threshold; // Keep remainder
 
-            let dmg = (this.sandbagLevel * 10); // Base Minion Damage (Weak)
+            let dmg = 10; // Base Minion Damage (Fixed)
 
             // Bone Unity / Copy Logic
             if (stats.boneUnity) {
