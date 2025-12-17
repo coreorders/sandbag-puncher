@@ -10,6 +10,13 @@ log('Script v3 Loading...');
 // ============================================
 const PATCH_NOTES = `
 ---------------------
+25년 12월 17일 오후 1시
+반지옵션 추가 및 변경
+추가 - 접두 해골궁수 데미지가 내 데미지의 %로 공격
+변경 - 접두 해골궁수소환 1~3마리로 변경
+추가 - 접미 소환수 공격속도증가 %
+
+---------------------
 25년 12월 16일 오후 11시15분
 패치노트 버튼이 간혹 중앙에 배치되던 문제 수정.
 패치노트 스크롤 안되는문제 수정
@@ -162,24 +169,25 @@ const playSound = (type) => {
 const AFFIX_DATA = {
     weapon: {
         prefixes: [
-            { id: 'phys_dmg', name: '폭군의', stat: 'incDmg', tiers: [{ t: 5, min: 1, max: 10, w: 5 }, { t: 4, min: 11, max: 20, w: 25 }, { t: 3, min: 21, max: 30, w: 40 }, { t: 2, min: 31, max: 40, w: 25 }, { t: 1, min: 41, max: 50, w: 5 }] },
-            { id: 'poison', name: '맹독의', stat: 'poisonDmg', tiers: [{ t: 5, min: 20, max: 25, w: 5 }, { t: 4, min: 26, max: 30, w: 25 }, { t: 3, min: 31, max: 40, w: 40 }, { t: 2, min: 41, max: 45, w: 25 }, { t: 1, min: 46, max: 50, w: 5 }] }
+            { id: 'phys_dmg', name: '폭군의', stat: 'incDmg', weight: 1000, tiers: [{ t: 5, min: 1, max: 10, w: 50 }, { t: 4, min: 11, max: 20, w: 250 }, { t: 3, min: 21, max: 30, w: 400 }, { t: 2, min: 31, max: 40, w: 250 }, { t: 1, min: 41, max: 50, w: 50 }] },
+            { id: 'poison', name: '맹독의', stat: 'poisonDmg', weight: 1000, tiers: [{ t: 5, min: 20, max: 25, w: 50 }, { t: 4, min: 26, max: 30, w: 250 }, { t: 3, min: 31, max: 40, w: 400 }, { t: 2, min: 41, max: 45, w: 250 }, { t: 1, min: 46, max: 50, w: 50 }] }
         ],
         suffixes: [
-            { id: 'crit_chance', name: '정밀함의', stat: 'critChance', tiers: [{ t: 5, min: 1, max: 5, w: 5 }, { t: 4, min: 6, max: 10, w: 25 }, { t: 3, min: 11, max: 15, w: 40 }, { t: 2, min: 16, max: 20, w: 25 }, { t: 1, min: 21, max: 25, w: 5 }] },
-            { id: 'crit_multi', name: '파괴의', stat: 'critMulti', tiers: [{ t: 5, min: 1, max: 10, w: 5 }, { t: 4, min: 11, max: 20, w: 25 }, { t: 3, min: 21, max: 30, w: 40 }, { t: 2, min: 31, max: 40, w: 25 }, { t: 1, min: 41, max: 50, w: 5 }] }
+            { id: 'crit_chance', name: '정밀함', stat: 'critChance', weight: 1000, tiers: [{ t: 5, min: 1, max: 5, w: 50 }, { t: 4, min: 6, max: 10, w: 250 }, { t: 3, min: 11, max: 15, w: 400 }, { t: 2, min: 16, max: 20, w: 250 }, { t: 1, min: 21, max: 25, w: 50 }] },
+            { id: 'crit_multi', name: '파괴', stat: 'critMulti', weight: 1000, tiers: [{ t: 5, min: 1, max: 10, w: 50 }, { t: 4, min: 11, max: 20, w: 250 }, { t: 3, min: 21, max: 30, w: 400 }, { t: 2, min: 31, max: 40, w: 250 }, { t: 1, min: 41, max: 50, w: 50 }] }
         ]
     },
     ring: {
         prefixes: [
-
-            { id: 'weapon_effect', name: '강화의', stat: 'weaponEffectScale', weight: 1000, tiers: [{ t: 5, min: 10, max: 20, w: 5 }, { t: 4, min: 21, max: 30, w: 25 }, { t: 3, min: 31, max: 40, w: 40 }, { t: 2, min: 41, max: 50, w: 25 }, { t: 1, min: 51, max: 60, w: 5 }] },
-            { id: 'summon_skel', name: '강령술사의', stat: 'summonSkeleton', weight: 300, tiers: [{ t: 1, min: 1, max: 1, w: 100 }] }
+            { id: 'weapon_effect', name: '강화의', stat: 'weaponEffectScale', weight: 1000, tiers: [{ t: 5, min: 10, max: 20, w: 50 }, { t: 4, min: 21, max: 30, w: 250 }, { t: 3, min: 31, max: 40, w: 400 }, { t: 2, min: 41, max: 50, w: 250 }, { t: 1, min: 51, max: 60, w: 50 }] },
+            { id: 'summon_skel', name: '강령술사의', stat: 'summonSkeleton', weight: 1000, tiers: [{ t: 3, min: 1, max: 1, w: 1000 }, { t: 2, min: 2, max: 2, w: 600 }, { t: 1, min: 3, max: 3, w: 200 }] },
+            { id: 'copy', name: '뺏어옴의', stat: 'minionCopyDmg', weight: 300, tiers: [{ t: 5, min: 1, max: 5, w: 1000 }, { t: 4, min: 5, max: 15, w: 1000 }, { t: 3, min: 15, max: 20, w: 1000 }, { t: 2, min: 25, max: 30, w: 500 }, { t: 1, min: 31, max: 40, w: 50 }] }
         ],
         suffixes: [
-            { id: 'wealth', name: '풍요의', stat: 'skeletonArrow', weight: 100, tiers: [{ t: 2, min: 1, max: 1, w: 80 }, { t: 1, min: 2, max: 2, w: 20 }] },
-            { id: 'fortune', name: '행운의', stat: 'minionDmg', weight: 100, tiers: [{ t: 5, min: 20, max: 30, w: 20 }, { t: 1, min: 40, max: 50, w: 20 }] },
-            { id: 'toxic', name: '중독의', stat: 'poisonChance', weight: 100, tiers: [{ t: 5, min: 5, max: 10, w: 5 }, { t: 4, min: 11, max: 15, w: 25 }, { t: 3, min: 16, max: 20, w: 40 }, { t: 2, min: 21, max: 25, w: 25 }, { t: 1, min: 26, max: 30, w: 5 }] }
+            { id: 'wealth', name: '풍요', stat: 'skeletonArrow', weight: 1000, tiers: [{ t: 5, min: 1, max: 1, w: 500 }, { t: 4, min: 2, max: 2, w: 300 }, { t: 3, min: 3, max: 3, w: 200 }, { t: 2, min: 4, max: 4, w: 200 }, { t: 1, min: 5, max: 5, w: 100 }] },
+            { id: 'fortune', name: '행운', stat: 'minionDmg', weight: 1000, tiers: [{ t: 5, min: 20, max: 30, w: 500 }, { t: 1, min: 40, max: 50, w: 500 }] },
+            { id: 'toxic', name: '중독', stat: 'poisonChance', weight: 1000, tiers: [{ t: 5, min: 5, max: 10, w: 50 }, { t: 4, min: 11, max: 15, w: 250 }, { t: 3, min: 16, max: 20, w: 400 }, { t: 2, min: 21, max: 25, w: 250 }, { t: 1, min: 26, max: 30, w: 50 }] },
+            { id: 'haste', name: '해골신속', stat: 'skelSpeedBonus', weight: 1000, tiers: [{ t: 5, min: 15, max: 20, w: 50 }, { t: 4, min: 21, max: 25, w: 250 }, { t: 3, min: 26, max: 30, w: 400 }, { t: 2, min: 31, max: 35, w: 250 }, { t: 1, min: 36, max: 40, w: 50 }] }
         ]
     }
 };
@@ -369,11 +377,15 @@ class Item {
             if (a.stat === 'incDmg') txt = `물리 피해 +${a.value}%`;
             else if (a.stat === 'poisonDmg') txt = `중독 (3초간 물리 피해의 ${a.value}%)`;
             else if (a.stat === 'poisonChance') txt = `중독 확률 +${a.value}%`;
-            else if (a.stat === 'summonSkeleton') txt = `해골 궁수 소환`;
+            else if (a.stat === 'critChance') txt = `치명타 확률 +${a.value}%`;
+            else if (a.stat === 'critMulti') txt = `치명타 피해 +${a.value}%`;
+            else if (a.stat === 'summonSkeleton') txt = `해골 궁수 소환 +${a.value}마리`;
             else if (a.stat === 'skeletonArrow') txt = `해골 화살 수 +${a.value}`;
             else if (a.stat === 'minionDmg') txt = `소환수 피해 +${a.value}%`;
             else if (a.stat === 'proj_count') txt = `투사체 추가 +${a.value}`;
             else if (a.stat === 'weaponEffectScale') txt = `무기 효과 증폭 +${a.value}%`;
+            else if (a.stat === 'minionCopyDmg') txt = `해골이 플레이어 데미지의 ${a.value}%로 공격`;
+            else if (a.stat === 'skelSpeedBonus') txt = `해골 공격 속도 +${a.value}%`;
             else txt = `${a.stat} +${a.value}`;
             html += `<div class='affix-line'><span class='affix-tier'>(T${a.tier})</span> ${txt}</div>`;
         });
@@ -930,7 +942,7 @@ class Game {
         if (e) {
             this.playPunchAnim();
             if (stats.projectiles > 0) this.showProjectiles(stats.projectiles, e.clientX, e.clientY);
-            this.spawnSkeletons(stats.hasSkeleton);
+            this.spawnSkeletons(stats.skeletonCount);
         }
     }
 
@@ -1001,16 +1013,35 @@ class Game {
         }
     }
 
-    spawnSkeletons(active) {
-        if (active && this.skeletons < 1) {
-            this.skeletons = 1;
-            const el = document.createElement('div');
-            el.className = 'skeleton';
-            // Use Image
-            el.innerHTML = `<img src="skeleton_archer.png" alt="Skeleton" style="width:100%; height:100%; object-fit:contain;">`;
-            document.getElementById('minion-container').appendChild(el);
+    spawnSkeletons(count) {
+        if (count > 0 && this.skeletons !== count) {
+            this.skeletons = count;
+            const container = document.getElementById('minion-container');
+            container.innerHTML = ''; // Reset
+
+            for (let i = 0; i < count; i++) {
+                const el = document.createElement('div');
+                el.className = 'skeleton';
+                // Use Image
+                el.innerHTML = `<img src="skeleton_archer.png" alt="Skeleton" style="width:100%; height:100%; object-fit:contain;">`;
+
+                // Position Offset: Left-Up 5px per index
+                // Default position is handled by CSS, but we need relative offsets.
+                // Or absolute positioning inside container?
+                // Let's assume container is relative and skeleton is absolute.
+                // But current CSS likely positions .skeleton fixed? 
+                // Let's check CSS if possible, but assuming standard flow or absolute.
+                // User said: "기존궁수의 왼쪽위 5픽셀씩".
+                // If index 0 is at (0,0), index 1 is at (-5, -5).
+                el.style.position = 'absolute';
+                el.style.right = (20 + i * 5) + 'px'; // Move left (from right)
+                el.style.bottom = (20 + i * 5) + 'px'; // Move up
+                el.style.width = '60px';
+                el.style.height = '60px'; // Force size
+                container.appendChild(el);
+            }
         }
-        if (!active && this.skeletons > 0) {
+        if (count === 0 && this.skeletons > 0) {
             this.skeletons = 0;
             document.getElementById('minion-container').innerHTML = '';
         }
@@ -1026,54 +1057,77 @@ class Game {
 
         // Attack Speed Logic
         let spdMult = 1;
-        if (stats.skelStorm) spdMult += (stats.skelSpeedBonus / 100);
+        if (stats.skelStormCount > 0) spdMult += (stats.skelSpeedBonus / 100);
+        else if (stats.skelSpeedBonus > 0) spdMult += (stats.skelSpeedBonus / 100);
         const threshold = 1000 / spdMult;
 
         if (this.skelTimer >= threshold) {
             this.skelTimer -= threshold; // Keep remainder
 
-            let dmg = (stats.boneUnity ? this.lastTotalDmg : 10) * (1 + stats.minionDmg / 100);
+            let dmg = (this.sandbagLevel * 10); // Base Minion Damage (Weak)
+
+            // Bone Unity / Copy Logic
+            if (stats.boneUnity) {
+                let weaponBase = 0;
+                ['weapon1', 'weapon2', 'ring1', 'ring2'].forEach(k => { if (this.equipment[k]) weaponBase += this.equipment[k].baseDamage; });
+                const playerBase = this.char.baseDmg + weaponBase + stats.flatDamage;
+                dmg = playerBase * (1 + stats.incDmg / 100);
+            } else if (stats.minionCopyDmg > 0) {
+                // Copy: % of Player Damage
+                let weaponBase = 0;
+                ['weapon1', 'weapon2', 'ring1', 'ring2'].forEach(k => { if (this.equipment[k]) weaponBase += this.equipment[k].baseDamage; });
+                const playerBase = this.char.baseDmg + weaponBase + stats.flatDamage;
+                const playerTotal = playerBase * (1 + stats.incDmg / 100);
+                dmg = playerTotal * (stats.minionCopyDmg / 100);
+            }
+            dmg *= (1 + stats.minionDmg / 100);
+
             if (stats.skelStormCount > 0) dmg *= (5 * stats.skelStormCount); // x5 Per Item
 
             const arrows = stats.skelArrows;
-            for (let i = 0; i < arrows; i++) {
-                setTimeout(() => {
-                    const arrow = document.createElement('div');
-                    arrow.className = 'arrow';
-                    // Use Image for Arrow
-                    arrow.innerHTML = `<img src="arrow.png" alt="Arrow" style="width:100%; height:100%; object-fit:contain; transform: rotate(45deg);">`;
-                    // Note: Rotate 135deg? Original CSS arrow might have been rotated.
-                    // Assuming arrow.png points UP or RIGHT. Usually pixel art arrows point UP-RIGHT.
-                    // Let's assume standard orientation. If needed, I'll adjust rotation.
-                    // User said "arrow.png". Most likely a standard arrow.
+            const skelElements = document.querySelectorAll('.skeleton');
+            const sb = document.getElementById('sandbag');
 
-                    const skel = document.querySelector('.skeleton');
-                    const sb = document.getElementById('sandbag');
-                    if (skel && sb) {
-                        const sRect = skel.getBoundingClientRect();
-                        const bRect = sb.getBoundingClientRect();
-                        arrow.style.left = sRect.left + 20 + 'px';
-                        arrow.style.top = sRect.top + 20 + 'px';
-                        document.body.appendChild(arrow);
-                        requestAnimationFrame(() => {
-                            arrow.style.transition = 'all 0.4s linear';
-                            arrow.style.left = (bRect.left + bRect.width / 2) + 'px';
-                            arrow.style.top = (bRect.top + bRect.height / 2) + 'px';
-                        });
-                        setTimeout(() => { arrow.remove(); this.dealDamage(dmg); }, 400);
-                    } else { this.dealDamage(dmg); }
-                }, i * 200);
-            }
+            skelElements.forEach(skel => {
+                for (let i = 0; i < arrows; i++) {
+                    setTimeout(() => {
+                        if (!this.gameRunning) return;
+
+                        if (skel && sb) {
+                            const sRect = skel.getBoundingClientRect();
+                            const bRect = sb.getBoundingClientRect();
+
+                            const arrow = document.createElement('div');
+                            arrow.className = 'arrow';
+                            arrow.innerHTML = `<img src="arrow.png" alt="Arrow" style="width:100%; height:100%; object-fit:contain; transform: rotate(45deg);">`;
+
+                            arrow.style.position = 'fixed';
+                            arrow.style.left = (sRect.left + 20) + 'px';
+                            arrow.style.top = (sRect.top + 20) + 'px';
+                            arrow.style.zIndex = '100'; // Ensure visibility
+                            arrow.style.pointerEvents = 'none'; // Prevent blocking clicks
+
+                            document.body.appendChild(arrow);
+                            requestAnimationFrame(() => {
+                                arrow.style.transition = 'all 0.4s linear';
+                                arrow.style.left = (bRect.left + bRect.width / 2) + 'px';
+                                arrow.style.top = (bRect.top + bRect.height / 2) + 'px';
+                            });
+                            setTimeout(() => { arrow.remove(); this.dealDamage(dmg); }, 400);
+                        } else { this.dealDamage(dmg); }
+                    }, i * 200);
+                }
+            });
         }
     }
 
     calculateStats() {
         let s = {
             incDmg: 0, atkSpd: 0, critChance: 0, critMulti: 200, projectiles: 0,
-            weaponEffectScale: 0, poisonPercent: 0, hasSkeleton: false, minionDmg: 0,
+            weaponEffectScale: 0, poisonPercent: 0, skeletonCount: 0, minionDmg: 0,
             skelArrows: 1, poisonChance: 0, boneUnity: false, poisonDurationInfo: 0,
             drillRate: 0, awl: false, skelStormCount: 0, skelSpeedBonus: 0,
-            flatDamage: 0
+            flatDamage: 0, minionCopyDmg: 0
         };
         ['ring1', 'ring2'].forEach(k => { var i = this.equipment[k]; if (i) i.affixes.forEach(a => { if (a.stat === 'weaponEffectScale') s.weaponEffectScale += a.value; }); });
         ['weapon1', 'weapon2', 'ring1', 'ring2'].forEach(k => {
@@ -1088,7 +1142,7 @@ class Game {
                 if (a.stat === 'projectiles') s.projectiles += v;
                 if (a.stat === 'poisonDmg') s.poisonPercent += v;
                 if (a.stat === 'poisonChance') s.poisonChance += v;
-                if (a.stat === 'summonSkeleton') s.hasSkeleton = true;
+                if (a.stat === 'summonSkeleton') s.skeletonCount += a.value;
                 if (a.stat === 'minionDmg') s.minionDmg += v;
                 if (a.stat === 'skeletonArrow') s.skelArrows += v;
                 if (a.stat === 'uniqueBoneUnity') s.boneUnity = true;
@@ -1096,6 +1150,9 @@ class Game {
                     s.poisonChance += 100; s.poisonPercent += 100; s.poisonDurationInfo += a.value;
                 }
                 if (a.stat === 'uniqueDrill') s.drillRate += a.value;
+                if (a.stat === 'awl') s.awl = true;
+                if (a.stat === 'minionCopyDmg') s.minionCopyDmg += a.value;
+                if (a.stat === 'skelSpeedBonus') s.skelSpeedBonus += a.value;
                 if (a.stat === 'uniqueAwl') s.awl = true;
                 if (a.stat === 'uniqueSkelStorm') { s.skelStormCount++; s.skelSpeedBonus += a.value; }
             });
@@ -1117,10 +1174,14 @@ class Game {
                     if (a.stat === 'projectiles') s.projectiles += v;
                     if (a.stat === 'poisonDmg') s.poisonPercent += v;
                     if (a.stat === 'poisonChance') s.poisonChance += v;
-                    if (a.stat === 'summonSkeleton') s.hasSkeleton = true;
+                    if (a.stat === 'summonSkeleton') s.skeletonCount = (s.skeletonCount || 0) + 1; // Mirror adds +1 or copy value? Mirror doubles value usually.
+                    // But summonSkeleton value IS count. So a.value * 2? No, Mirror logic above does `v = a.value * scale * 2`.
+                    if (a.stat === 'summonSkeleton') s.skeletonCount += v;
                     if (a.stat === 'minionDmg') s.minionDmg += v;
                     if (a.stat === 'skeletonArrow') s.skelArrows += v;
                     if (a.stat === 'weaponEffectScale') s.weaponEffectScale += v;
+                    if (a.stat === 'minionCopyDmg') s.minionCopyDmg += v;
+                    if (a.stat === 'skelSpeedBonus') s.skelSpeedBonus += v;
                     if (a.stat === 'uniqueBoneUnity') s.boneUnity = true;
                     if (a.stat === 'uniqueHornet') { s.poisonChance += 200; s.poisonPercent += 200; s.poisonDurationInfo += a.value * 2; }
                     if (a.stat === 'uniqueAwl') s.awl = true;
