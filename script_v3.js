@@ -452,7 +452,6 @@ class Game {
         this.sandbag = document.getElementById('sandbag');
         this.hpBar = document.getElementById('hp-bar');
         this.hpText = document.getElementById('hp-text');
-        this.groundItemsDiv = document.getElementById('ground-items');
         this.inventoryGrid = document.getElementById('inventory-grid');
         this.tooltip = document.querySelector('.tooltip-container') || this.createTooltip();
         this.startOverlay = document.getElementById('start-overlay');
@@ -489,12 +488,6 @@ class Game {
 
     setActivePanel(panel) {
         this.activePanel = panel;
-        document.querySelectorAll('.panel-tab').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.panel === panel);
-        });
-        document.querySelectorAll('.panel-pane').forEach(pane => {
-            pane.classList.toggle('active', pane.dataset.panel === panel);
-        });
     }
 
     clearTransientEffects() {
@@ -609,87 +602,15 @@ class Game {
             cb.onchange = () => this.renderDrops();
         });
 
-        // Trash Can: Toggle Delete Mode AND Drop Target
-        const trash = document.getElementById('trash-can');
-        if (trash) {
-            trash.onclick = () => this.toggleDeleteMode();
-            // Desktop Drop to Delete
-            trash.ondragover = (e) => { e.preventDefault(); trash.classList.add('hover'); };
-            trash.ondragleave = () => trash.classList.remove('hover');
-            trash.ondrop = (e) => {
-                e.preventDefault();
-                trash.classList.remove('hover');
-                try {
-                    const data = JSON.parse(e.dataTransfer.getData('text/plain'));
-                    if (data.source === 'inventory') {
-                        this.inventory.splice(data.index, 1);
-                        this.renderInventory();
-                    }
-                } catch (err) { console.error('Trash Drop Error', err); }
-            };
-        }
-
-        const goldToggle = document.getElementById('gold-mode-toggle');
-        if (goldToggle) goldToggle.onchange = (e) => this.goldMode = e.target.checked;
-
-        // Refinery Slots Drop
-        [1, 2].forEach(id => {
-            const slot = document.getElementById(`refine-slot-${id}`);
-            if (slot) {
-                slot.ondragover = (e) => e.preventDefault();
-                slot.ondrop = (e) => {
-                    e.preventDefault();
-                    try {
-                        const data = JSON.parse(e.dataTransfer.getData('text/plain'));
-                        if (data.source === 'inventory') {
-                            this.setRefinerySlot(id, this.inventory[data.index]);
-                            // Remove from inventory? - Yes, move it.
-                            this.inventory.splice(data.index, 1);
-                            this.renderInventory();
-                        }
-                    } catch (err) { }
-                };
-                slot.onclick = () => {
-                    // Return to inventory
-                    if (this.refinerySlots[id]) {
-                        if (this.inventory.length < 20) {
-                            this.inventory.push(this.refinerySlots[id]);
-                            this.setRefinerySlot(id, null);
-                            this.renderInventory();
-                        } else {
-                            alert("인벤토리가 꽉 찼습니다.");
-                        }
-                    }
-                };
-            }
-        });
-
-
-
-        // Inventory Grid: Drop Target for Loot AND Unequip
-        const invGrid = document.getElementById('inventory-grid');
-        if (invGrid) {
-            invGrid.ondragover = (e) => e.preventDefault();
-            invGrid.ondrop = (e) => {
-                e.preventDefault();
-                try {
-                    const data = JSON.parse(e.dataTransfer.getData('text/plain'));
-                    if (data.source === 'drop') {
-                        this.lootItem(data.index);
-                    } else if (data.source === 'equip') {
-                        // Unequip Logic
-                        const key = data.key;
-                        const item = this.equipment[key];
-                        if (item && this.inventory.length < 20) {
-                            this.equipment[key] = null;
-                            this.inventory.push(item);
-                            this.renderEquipment();
-                            this.renderInventory();
-                        } else if (this.inventory.length >= 20) {
-                            alert("인벤토리가 꽉 찼습니다.");
-                        }
-                    }
-                } catch (err) { }
+        document.getElementById('trash-can').onclick = () => this.toggleDeleteMode();
+        for (const id of [1, 2]) {
+            document.getElementById(`refine-slot-${id}`).onclick = () => {
+                const item = this.refinerySlots[id];
+                if (!item) return;
+                this.inventory.push(item);
+                this.setRefinerySlot(id, null);
+                this.renderInventory();
+                this.autoSave(true);
             };
         }
 
@@ -711,21 +632,14 @@ class Game {
         // Hover for Desktop
         document.addEventListener('mouseover', e => {
             const t = e.target.closest('[data-tooltip-html]');
-            if (t) {
+            if (t && window.matchMedia('(hover: hover)').matches) {
                 this.showTooltip(t.getAttribute('data-tooltip-html'), e.clientX, e.clientY);
             }
         });
         document.addEventListener('mousemove', e => {
-            if (this.tooltip.style.display === 'block') {
-                const w = this.tooltip.offsetWidth;
-                const screenW = window.innerWidth;
-                let left = e.clientX + 15;
-                if (left + w > screenW) left = screenW - w - 10;
-
-                this.tooltip.style.left = left + 'px';
-                this.tooltip.style.top = (e.clientY + 15) + 'px';
-            }
+            if (this.tooltip.style.display === 'block') this.positionTooltip(e.clientX, e.clientY);
         });
+        document.addEventListener('scroll', () => { this.tooltip.style.display = 'none'; }, true);
         document.addEventListener('mouseout', e => { if (e.target.closest('[data-tooltip-html]')) this.tooltip.style.display = 'none'; });
 
         this.initSlots();
@@ -753,72 +667,15 @@ class Game {
     }
 
     initSlots() {
-        const slotsDiv = document.getElementById('equipment-slots');
-        slotsDiv.innerHTML = '';
-
-        // Explicit Order and Naming
-        const config = [
-            { key: 'weapon1', label: '무기1' },
-            { key: 'weapon2', label: '무기2' },
-            { key: 'ring1', label: '반지1' },
-            { key: 'ring2', label: '반지2' }
-        ];
-
-        config.forEach(cfg => {
-            const div = document.createElement('div');
-            // Extract type for class (weapon or ring)
-            const type = cfg.key.startsWith('weapon') ? 'weapon-slot' : 'ring-slot';
-            div.className = `slot equipment-slot ${type}`;
-            div.setAttribute('data-key', cfg.key);
-            // User requested visual clarity: Silhouettes are primary, labels removed.
-            div.innerHTML = `<div class='slot-content'></div>`;
-
-            // Allow Drop (Equip)
-            div.ondragover = (e) => e.preventDefault();
-            div.ondrop = (e) => {
-                e.preventDefault();
-                try {
-                    const data = JSON.parse(e.dataTransfer.getData('text/plain'));
-                    if (data.source === 'inventory') {
-                        this.equip(this.inventory[data.index], data.index, cfg.key);
-                    } else if (data.source === 'drop') {
-                        // FIX: Allow direct equip from ground
-                        if (this.inventory.length >= 20) return alert("인벤토리가 가득 찼습니다!");
-                        const item = this.drops[data.index];
-                        if (!item) return;
-
-                        // Loot it first
-                        this.drops.splice(data.index, 1);
-                        this.inventory.push(item);
-                        const newIdx = this.inventory.length - 1;
-
-                        // Then Equip
-                        this.equip(item, newIdx, cfg.key);
-                        this.renderDrops();
-                        // renderInventory called by equip usually?
-                        // equip() calls renderInventory() and updateStats().
-                        // But wait, equip() takes item from inventory.
-                        // I just put it in inventory. So it's safe.
-                    }
-                } catch (err) { }
-            };
-
-            // Touch Drop Simulation Helper
-            div.setAttribute('data-equippable', cfg.key);
-            slotsDiv.appendChild(div);
-        });
-    }
-
-    lootItem(dropIdx) {
-        if (dropIdx < 0) return;
-        if (this.inventory.length >= 20) return alert("인벤토리가 가득 찼습니다!");
-        const item = this.drops[dropIdx];
-        if (!item) return;
-        this.drops.splice(dropIdx, 1);
-        this.inventory.push(item);
-        this.renderDrops();
-        this.renderInventory();
-        this.autoSave(true);
+        const slots = document.getElementById('equipment-slots');
+        slots.replaceChildren();
+        for (const key of ['weapon1', 'weapon2', 'ring1', 'ring2']) {
+            const slot = document.createElement('div');
+            slot.className = 'slot equipment-slot ' + (key.startsWith('weapon') ? 'weapon-slot' : 'ring-slot');
+            slot.dataset.key = key;
+            slot.innerHTML = '<div class="slot-content"></div>';
+            slots.appendChild(slot);
+        }
     }
 
     init() {
@@ -920,30 +777,14 @@ class Game {
     showTooltip(html, x, y) {
         this.tooltip.innerHTML = html;
         this.tooltip.style.display = 'block';
+        this.positionTooltip(x, y);
+    }
 
-        // Wait for render to get width
-        requestAnimationFrame(() => {
-            const w = this.tooltip.offsetWidth;
-            const h = this.tooltip.offsetHeight;
-            const screenW = window.innerWidth;
-
-            let left = x + 15;
-            let top = y + 15;
-
-            // Right Collision
-            if (left + w > screenW) {
-                left = screenW - w - 10;
-            }
-
-            // Bottom Collision (Fix: Move above cursor if clipping)
-            const screenH = window.innerHeight;
-            if (top + h > screenH) {
-                top = y - h - 15; // Move above
-            }
-
-            this.tooltip.style.left = left + 'px';
-            this.tooltip.style.top = top + 'px';
-        });
+    positionTooltip(x, y) {
+        const w = this.tooltip.offsetWidth;
+        const h = this.tooltip.offsetHeight;
+        this.tooltip.style.left = Math.max(8, Math.min(x + 15, window.innerWidth - w - 8)) + 'px';
+        this.tooltip.style.top = Math.max(8, Math.min(y + 15, window.innerHeight - h - 8)) + 'px';
     }
 
     punch(e, silent = false) {
@@ -1341,7 +1182,7 @@ class Game {
     }
 
     spawnDrop() {
-        if (this.drops.length >= 100) this.drops.shift();
+
         const types = ['weapon', 'ring', 'weapon', 'ring'];
         const type = types[Math.floor(Math.random() * types.length)];
         const item = AffixSystem.rollItem(type, this.sandbagLevel);
@@ -1363,11 +1204,13 @@ class Game {
         level.className = 'item-level';
         level.textContent = item.level;
         el.append(icon, level);
+        el.setAttribute('data-tooltip-html', item.getTooltipHTML());
         el.onclick = action;
         return el;
     }
 
     itemMenu(item, actions) {
+        this.tooltip.style.display = 'none';
         this.showGenericModal(item.name, '');
         const body = document.getElementById('modal-body');
         body.innerHTML = item.getTooltipHTML();
@@ -1386,22 +1229,17 @@ class Game {
     }
 
     renderDrops() {
-        this.groundItemsDiv.replaceChildren();
-        const filters = Array.from(document.querySelectorAll('#loot-filter input:checked')).map(cb => cb.dataset.filter);
-        const visible = this.drops.filter(i => filters.includes(i.rarity) || i.rarity === 'unique').slice().reverse();
-        for (const item of visible) {
-            this.groundItemsDiv.appendChild(this.makeItemButton(item, () => this.itemMenu(item, [
-                ['가방에 담기', () => this.lootItem(this.drops.indexOf(item))]
-            ])));
-        }
-        if (!visible.length) this.groundItemsDiv.innerHTML = '<p class="empty-state">샌드백을 쓰러뜨리면<br>새 장비가 여기 나타나요.</p>';
-        const tab = document.querySelector('[data-panel="drops"].panel-tab');
-        tab.textContent = `루팅 ${this.drops.length || ''}`;
+        // Migrate legacy ground drops into the single owned-item collection.
+        this.inventory.push(...this.drops);
+        this.drops = [];
+        this.renderInventory();
     }
 
     renderInventory() {
         this.inventoryGrid.replaceChildren();
-        for (const item of this.inventory) {
+        const filters = Array.from(document.querySelectorAll('#loot-filter input:checked')).map(cb => cb.dataset.filter);
+        const visible = this.inventory.filter(i => filters.includes(i.rarity) || i.rarity === 'unique').slice().reverse();
+        for (const item of visible) {
             this.inventoryGrid.appendChild(this.makeItemButton(item, () => {
                 const actions = [
                     ['장착하기', () => this.autoEquip(item, this.inventory.indexOf(item))],
@@ -1422,7 +1260,7 @@ class Game {
                 this.itemMenu(item, this.deleteMode ? [actions[2]] : actions);
             }));
         }
-        if (!this.inventory.length) this.inventoryGrid.innerHTML = '<p class="empty-state">아직 가방이 비어 있어요.<br>루팅 탭에서 장비를 담아보세요.</p>';
+        if (!visible.length) this.inventoryGrid.innerHTML = '<p class="empty-state">' + (this.inventory.length ? '필터에 맞는 아이템이 없어요.' : '샌드백을 격파하면 아이템이 자동으로 모여요.') + '</p>';
         document.getElementById('inv-count').textContent = this.inventory.length;
     }
 
@@ -1468,7 +1306,6 @@ class Game {
             if (!item) continue;
             slot.appendChild(this.makeItemButton(item, () => this.itemMenu(item, [
                 ['장착 해제', () => {
-                    if (this.inventory.length >= 20) return alert('가방이 가득 찼습니다.');
                     this.equipment[key] = null;
                     this.inventory.push(item);
                     this.renderEquipment();
@@ -1578,7 +1415,7 @@ class Game {
             if (!data || !data.char || !finite(data.char.level) || !finite(data.char.xp)
                 || !finite(data.char.maxXp) || data.char.maxXp < 1 || !finite(data.char.baseDmg)
                 || !finite(data.sandbagLevel) || data.sandbagLevel < 1 || data.sandbagLevel > 1000000
-                || !Array.isArray(data.inventory) || data.inventory.length > 20
+                || !Array.isArray(data.inventory)
                 || !data.inventory.every(i => i && validItem(i))
                 || !data.equipment || !['weapon1', 'weapon2', 'ring1', 'ring2'].every(k => validItem(data.equipment[k]))
                 || (data.drops && (!Array.isArray(data.drops) || !data.drops.every(i => i && validItem(i))))
@@ -1620,7 +1457,7 @@ class Game {
                 });
             }
             this.damage = Number.isFinite(data.damage) ? data.damage : 0;
-            this.drops = (data.drops || []).slice(-100).map(hydrate);
+            this.drops = (data.drops || []).map(hydrate);
             this.refinerySlots = { 1: hydrate(data.refinerySlots?.[1]), 2: hydrate(data.refinerySlots?.[2]) };
             this.refineryResult = hydrate(data.refineryResult);
             this.refreshDerivedState();
@@ -1678,7 +1515,7 @@ class Game {
     }
 
     showInvInfo() {
-        const text = '아이템을 누르면 장착, 제련 재료 선택, 삭제 메뉴가 열립니다. 삭제는 확인 후 실행되며, 가방에는 최대 20개를 보관할 수 있습니다.';
+        const text = '아이템을 누르면 장착, 제련 재료 선택, 삭제 메뉴가 열립니다. 삭제는 확인 후 실행되며, 드랍은 자동으로 목록에 모이며, 마우스를 올리거나 탭하면 옵션을 확인할 수 있습니다.';
         this.showGenericModal("인벤토리 도움말", text);
     }
 
@@ -1827,10 +1664,6 @@ L은 네줄짜리옵션 혹은 유니크아이템만 보이게 합니다.`;
     claimRefineryResult() {
         if (!this.refineryResult) return;
 
-        if (this.inventory.length >= 20) {
-            alert("인벤토리가 꽉 찼습니다.");
-            return;
-        }
 
         this.inventory.push(this.refineryResult);
         this.refineryResult = null;

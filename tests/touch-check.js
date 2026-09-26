@@ -13,16 +13,12 @@ async (page) => {
             game.drops = Array.from({ length: 30 }, () => AffixSystem.rollItem('weapon', 1));
             game.renderDrops();
         });
-        await mobile.locator('.panel-tab[data-panel="drops"]').tap();
-        await mobile.locator('#ground-items .item').first().tap();
-        await mobile.getByRole('button', { name: '가방에 담기', exact: true }).tap();
-        await mobile.locator('.panel-tab[data-panel="inventory"]').tap();
         await mobile.locator('#inventory-grid .item').first().tap();
+        check(await mobile.locator('#modal-body .tooltip-body').isVisible(), 'Options missing on tap');
         await mobile.getByRole('button', { name: '장착하기', exact: true }).tap();
         check(await mobile.evaluate(() => !!game.equipment.weapon1), 'Touch equip failed');
-        await mobile.locator('.panel-tab[data-panel="drops"]').tap();
         const scroll = await mobile.evaluate(() => {
-            const grid = document.getElementById('ground-items');
+            const grid = document.getElementById('inventory-grid');
             grid.scrollTop = 100;
             return grid.scrollTop > 0 && getComputedStyle(grid).touchAction === 'pan-y';
         });

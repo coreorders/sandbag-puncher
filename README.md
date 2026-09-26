@@ -21,9 +21,11 @@ python -m http.server 4173
 
 ## 조작과 저장
 
-샌드백을 누르면 공격합니다. 장비/가방/루팅 탭에서 아이템을 누르면 획득,
-장착, 해제, 제련 재료 선택 메뉴가 열립니다. 삭제는 확인 후 실행됩니다.
-모바일에서는 아이템 목록을 세로로 스크롤할 수 있습니다.
+샌드백을 누르면 공격합니다. 장비와 통합 아이템 목록이 항상 함께 표시됩니다.
+드랍은 자동으로 목록에 들어오며, 기존 저장의 가방과 드랍도 손실 없이 합쳐집니다.
+PC에서는 마우스를 올려 옵션을 확인하고, 모바일에서는 탭하여 옵션과 장착 메뉴를 엽니다.
+장착, 해제, 제련, 삭제를 메뉴에서 선택합니다. 삭제는 확인 후 실행됩니다.
+모바일에서는 아이템 목록만 세로로 스크롤할 수 있습니다.
 
 진행은 브라우저 localStorage에 저장됩니다. 같은 주소와 브라우저에서 이어할 수 있으며
 브라우저 데이터 삭제 시 사라집니다. 시작 화면에서는 기존 저장을 덮어쓰지 않습니다.
@@ -38,6 +40,7 @@ node --check script_v3.js
 npx --yes @playwright/cli open http://localhost:4173
 npx --yes @playwright/cli run-code --filename=tests/browser-check.js
 npx --yes @playwright/cli run-code --filename=tests/touch-check.js
+npx --yes @playwright/cli run-code --filename=tests/unified-items-check.js
 ```
 
 검증은 테스트 브라우저에 샘플 아이템과 저장 데이터를 생성합니다.

@@ -27,20 +27,14 @@ async (page) => {
         game.drops = [AffixSystem.rollItem('weapon', 2), AffixSystem.rollItem('weapon', 2)];
         game.renderDrops();
     });
-    await page.locator('.panel-tab[data-panel="drops"]').click();
-    await page.locator('#ground-items .item').first().click();
-    await page.getByRole('button', { name: '가방에 담기', exact: true }).click();
-    await page.locator('.panel-tab[data-panel="inventory"]').click();
     await page.locator('#inventory-grid .item').first().click();
     await page.getByRole('button', { name: '장착하기', exact: true }).click();
-    await page.locator('.panel-tab[data-panel="equip"]').click();
     await page.locator('#equipment-slots .item').first().click();
     await page.getByRole('button', { name: '장착 해제', exact: true }).click();
     await page.evaluate(() => {
         game.inventory = [AffixSystem.rollItem('weapon', 3), AffixSystem.rollItem('weapon', 3)];
         game.renderInventory();
     });
-    await page.locator('.panel-tab[data-panel="inventory"]').click();
     for (let i = 0; i < 2; i++) {
         await page.locator('#inventory-grid .item').first().click();
         await page.getByRole('button', { name: '제련 재료로 선택', exact: true }).click();
@@ -52,8 +46,7 @@ async (page) => {
     await page.reload();
     check(await page.evaluate(() => !!JSON.parse(localStorage.getItem('sb_save_v2')).refineryResult), 'Startup overwrote save');
     await page.getByRole('button', { name: '저장 이어하기', exact: true }).click();
-    check(await page.evaluate(() => !!game.refineryResult && game.damage > 0 && game.drops.length > 0), 'Save restoration incomplete');
-    await page.locator('.panel-tab[data-panel="inventory"]').click();
+    check(await page.evaluate(() => !!game.refineryResult && game.damage > 0), 'Save restoration incomplete');
     await page.locator('#btn-open-refinery').click();
     await page.locator('#refine-slot-result').click();
     check(await page.evaluate(() => game.inventory.length === 1 && !game.refineryResult), 'Fusion claim failed');

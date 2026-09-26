@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
     <title>샌드백 펀쳐</title>
     <link rel="icon" href="data:,">
-    <link rel="stylesheet" href="game.css?v=20260926">
+    <link rel="stylesheet" href="game.css?v=20260926b">
     <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Do+Hyeon&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -93,13 +93,7 @@
                     <span>전투는 위에서, 파밍 관리는 아래에서.</span>
                     <button id="btn-info-intro" class="info-btn-small" aria-label="게임 설명">i</button>
                 </div>
-                <div id="mobile-delete-hint">아이템을 눌러 장착 · 합성 · 획득</div>
-            </div>
-
-            <div id="panel-tabs" class="ui-interactive">
-                <button class="panel-tab active" data-panel="equip">장비</button>
-                <button class="panel-tab" data-panel="inventory">가방</button>
-                <button class="panel-tab" data-panel="drops">루팅</button>
+                <div id="mobile-delete-hint">올려서 옵션 확인 · 눌러서 장착</div>
             </div>
 
             <section id="bottom-panel">
@@ -116,31 +110,22 @@
 
                 <div class="b-col panel-pane" id="col-inv" data-panel="inventory">
                     <div class="col-header">
-                        <h3>인벤 (<span id="inv-count">0</span>/20)</h3>
+                        <h3>아이템 <span id="inv-count">0</span></h3>
                         <div class="inv-controls">
                             <button id="btn-info-inv" class="info-btn-small" aria-label="인벤 도움말">i</button>
                             <button id="btn-open-refinery" class="icon-btn small" title="아이템 제련소">🔨</button>
                             <button id="trash-can" class="icon-btn danger" title="삭제 모드">🔥</button>
                         </div>
                     </div>
-                    <div id="inventory-grid"></div>
-                </div>
-
-                <div class="b-col panel-pane" id="col-drops" data-panel="drops">
-                    <div class="col-header">
-                        <h3>루팅</h3>
-                        <div class="col-actions">
-                            <button id="btn-info-drops" class="info-btn-small" aria-label="드랍 도움말">i</button>
-                            <div id="loot-filter">
+                    <div class="item-filters"><button id="btn-info-drops" class="info-btn-small" aria-label="필터 도움말">i</button><div id="loot-filter">
                                 <label><input type="checkbox" checked data-filter="magic">M</label>
                                 <label><input type="checkbox" checked data-filter="rare">R</label>
                                 <label><input type="checkbox" checked data-filter="epic">E</label>
                                 <label><input type="checkbox" checked data-filter="legendary">L</label>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="ground-items"></div>
+                            </div></div>
+                    <div id="inventory-grid"></div>
                 </div>
+
             </section>
         </section>
     </div>
@@ -159,7 +144,7 @@
                 <div class="refinery-slot result" id="refine-slot-result">?</div>
             </div>
             <div class="refinery-controls">
-                <p id="refinery-msg">가방에서 아이템을 눌러 재료로 선택하세요.<br>같은 종류 2개를 합성합니다. 재료를 누르면 회수할 수 있어요.</p>
+                <p id="refinery-msg">아이템 목록에서 아이템을 눌러 재료로 선택하세요.<br>같은 종류 2개를 합성합니다. 재료를 누르면 회수할 수 있어요.</p>
                 <button id="btn-fuse" class="game-btn full-width" disabled>합성 하기</button>
             </div>
         </div>
@@ -239,6 +224,6 @@
         </div>
     </div>
 
-    <script src="script_v3.js?v=20260926"></script>
+    <script src="script_v3.js?v=20260926b"></script>
 </body>
 </html>
