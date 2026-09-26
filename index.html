@@ -1,172 +1,187 @@
 <!DOCTYPE html>
 <html lang="ko">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>샌드백 키우기</title>
-    <link rel="stylesheet" href="style_v2.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+    <title>샌드백 펀쳐</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="game.css?v=20260926">
     <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Do+Hyeon&display=swap" rel="stylesheet">
 </head>
-
 <body>
-    <div id="main-wrapper">
-        <!-- Floating Mobile Menu Button (Removed, layout is now permanent) -->
+    <div id="start-overlay">
+        <div class="start-card">
+            <p class="start-kicker">SANDBAG PUNCHER</p>
+            <h1>한 방 더.<br>한 단계 더.</h1>
+            <p class="start-summary">한 손 탭 액션, 빠른 파밍, 강한 보상 루프. 샌드백을 두들기고 장비를 세팅해 보스까지 밀어붙이세요.</p>
+            <div class="start-points">
+                <div>01 / 터치해서 샌드백 격파</div>
+                <div>02 / 장비를 모아 나만의 빌드 완성</div>
+                <div>03 / 악마 샌드백에 도전</div>
+            </div>
+            <div class="start-actions">
+                <button id="btn-start-game" class="game-btn primary">게임 시작</button>
+                <button id="btn-start-load" class="game-btn ghost">저장 이어하기</button>
+            </div>
+        </div>
+    </div>
 
-        <!-- TOP SECTION: Game Area -->
-        <button id="btn-patch" style="font-size:1.2rem; padding:5px;">📢</button>
-        <!-- section id="game-area" removed to flatten layout -->
-        <header>
-            <!-- Player Info (Moved to Top) -->
-            <div id="char-info">
-                <span id="char-level">Lv.1</span>
-                <span id="gold-display-top" style="margin-left:10px; color:#ffd700; font-size:0.9rem;">0 G</span>
+    <div id="main-wrapper">
+
+        <header class="game-header">
+            <div id="char-info" class="ui-interactive">
+                <div class="char-meta">
+                    <span id="char-level">Lv.1</span>
+                    <span class="char-caption">훈련병</span>
+                </div>
                 <div id="xp-bar-container">
                     <div id="xp-bar"></div>
                 </div>
-                <button id="btn-settings"
-                    style="margin-left:auto; background:none; border:none; font-size:1.2rem; cursor:pointer;">⚙️</button>
+                <button id="btn-settings" class="icon-btn" aria-label="설정">⚙️</button>
+                <button id="btn-patch" class="hud-chip">소식</button>
             </div>
 
-            <h1>샌드백 키우기</h1> <!-- Title hidden on mobile -->
-
             <div id="score-board">
-                <div class="stat">
-                    <span class="label">데미지</span>
+                <div class="stat-card">
+                    <span class="label">누적 데미지</span>
                     <span id="score">0</span>
                 </div>
-                <div class="stat">
+                <div class="stat-card">
                     <span class="label">예상 데미지 (5타)</span>
                     <span id="dps">0</span>
                 </div>
             </div>
-            <!-- Controls -->
-            <div id="sandbag-controls">
-                <button class="lvl-btn" data-change="-100">-100</button>
-                <button class="lvl-btn" data-change="-10">-10</button>
-                <button class="lvl-btn" id="btn-prev-lvl">◀</button>
-                <span id="sandbag-level-display">샌드백 Lv.1</span>
-                <button class="lvl-btn" id="btn-next-lvl">▶</button>
-                <button class="lvl-btn" data-change="10">+10</button>
-                <button class="lvl-btn" data-change="100">+100</button>
+
+            <div id="sandbag-controls" class="ui-interactive">
+                <div class="level-stepper">
+                    <button class="lvl-btn" data-change="-100">-100</button>
+                    <button class="lvl-btn" data-change="-10">-10</button>
+                    <button class="lvl-btn" id="btn-prev-lvl">◀</button>
+                    <span id="sandbag-level-display">샌드백 Lv.1</span>
+                    <button class="lvl-btn" id="btn-next-lvl">▶</button>
+                    <button class="lvl-btn" data-change="10">+10</button>
+                    <button class="lvl-btn" data-change="100">+100</button>
+                </div>
+                <button id="btn-boss" class="boss-btn">보스 도전</button>
             </div>
-            <button id="btn-boss" class="boss-btn">☠️ 보스 도전 ☠️</button>
         </header>
 
-        <div id="sandbag-container">
-            <div id="sandbag">
-                <!-- HP Bar Integrated into Sandbag -->
-                <div id="hp-bar-container" class="headband">
-                    <div id="hp-bar"></div>
-                    <span id="hp-text">100/100</span>
-                </div>
-
-                <div class="face">
-                    <div class="eye left">
-                        <div class="pupil"></div>
+        <main id="battlefield">
+            <div id="sandbag-container">
+                <div id="attack-hint">샌드백을 터치해 공격</div>
+                <div id="sandbag" role="button" tabindex="0" aria-label="샌드백 공격">
+                    <div id="hp-bar-container" class="headband">
+                        <div id="hp-bar"></div>
+                        <span id="hp-text">100 / 100</span>
                     </div>
-                    <div class="eye right">
-                        <div class="pupil"></div>
+                    <div class="face">
+                        <div class="eye left"><div class="pupil"></div></div>
+                        <div class="eye right"><div class="pupil"></div></div>
+                        <div class="mouth"></div>
+                        <div class="cheeks"></div>
                     </div>
-                    <div class="mouth"></div>
-                    <div class="cheeks"></div>
                 </div>
+                <div id="damage-container"></div>
+                <div id="minion-container"></div>
             </div>
-            <div id="damage-container"></div>
-            <div id="minion-container"></div>
-        </div>
+        </main>
 
-        <!-- BOTTOM SECTION -->
-        <div id="footer-section">
-            <div style="width:95%; text-align:right; margin-top:10px; margin-bottom:2px;">
-                <span style="font-size:0.8rem; color:#aaa; margin-right:5px;">게임 설명</span>
-                <button id="btn-info-intro" class="info-btn-small">i</button>
+        <section id="footer-section" class="ui-interactive">
+            <div class="sheet-handle" aria-hidden="true"></div>
+            <div id="footer-topline">
+                <div class="footer-copy">
+                    <span>전투는 위에서, 파밍 관리는 아래에서.</span>
+                    <button id="btn-info-intro" class="info-btn-small" aria-label="게임 설명">i</button>
+                </div>
+                <div id="mobile-delete-hint">아이템을 눌러 장착 · 합성 · 획득</div>
             </div>
-            <!-- DPS Container Removed -->
 
-            <!-- BOTTOM SECTION: 3 Columns -->
+            <div id="panel-tabs" class="ui-interactive">
+                <button class="panel-tab active" data-panel="equip">장비</button>
+                <button class="panel-tab" data-panel="inventory">가방</button>
+                <button class="panel-tab" data-panel="drops">루팅</button>
+            </div>
+
             <section id="bottom-panel">
-                <!-- Col 1: Equipment -->
-                <div class="b-col" id="col-equip">
-                    <h3>장비 <button id="btn-info-equip" class="info-btn-small">i</button></h3>
-                    <div id="equipment-slots">
-                        <!-- Slots generated by JS -->
+                <div class="b-col panel-pane active" id="col-equip" data-panel="equip">
+                    <div class="col-header">
+                        <h3>장비</h3>
+                        <div class="col-actions">
+                            <button id="btn-info-equip" class="info-btn-small" aria-label="장비 도움말">i</button>
+                            <button id="btn-toggle-equip" class="icon-btn small" aria-label="장비 펼치기">▼</button>
+                        </div>
                     </div>
-                    <!-- Stats Summary Removed -->
+                    <div id="equipment-slots" class="expanded"></div>
                 </div>
 
-                <!-- Col 2: Inventory -->
-                <div class="b-col" id="col-inv">
+                <div class="b-col panel-pane" id="col-inv" data-panel="inventory">
                     <div class="col-header">
                         <h3>인벤 (<span id="inv-count">0</span>/20)</h3>
                         <div class="inv-controls">
-                            <button id="btn-info-inv" class="info-btn-small">i</button>
-                            <button id="btn-open-shop">🛒</button>
-                            <div id="trash-can">🗑️</div>
-                            <label class="gold-mode"><input type="checkbox" id="gold-mode-toggle">G</label>
+                            <button id="btn-info-inv" class="info-btn-small" aria-label="인벤 도움말">i</button>
+                            <button id="btn-open-refinery" class="icon-btn small" title="아이템 제련소">🔨</button>
+                            <button id="trash-can" class="icon-btn danger" title="삭제 모드">🔥</button>
                         </div>
                     </div>
-                    <div id="inventory-grid">
-                        <!-- 20 slots generated by JS -->
-                    </div>
+                    <div id="inventory-grid"></div>
                 </div>
 
-                <!-- Col 3: Drops -->
-                <div class="b-col" id="col-drops">
+                <div class="b-col panel-pane" id="col-drops" data-panel="drops">
                     <div class="col-header">
-                        <h3>드랍 <button id="btn-info-drops" class="info-btn-small">i</button></h3>
-                        <div id="loot-filter">
-                            <label><input type="checkbox" checked data-filter="magic">M</label>
-                            <label><input type="checkbox" checked data-filter="rare">R</label>
-                            <label><input type="checkbox" checked data-filter="epic">E</label>
-                            <label><input type="checkbox" checked data-filter="legendary">L</label>
+                        <h3>루팅</h3>
+                        <div class="col-actions">
+                            <button id="btn-info-drops" class="info-btn-small" aria-label="드랍 도움말">i</button>
+                            <div id="loot-filter">
+                                <label><input type="checkbox" checked data-filter="magic">M</label>
+                                <label><input type="checkbox" checked data-filter="rare">R</label>
+                                <label><input type="checkbox" checked data-filter="epic">E</label>
+                                <label><input type="checkbox" checked data-filter="legendary">L</label>
+                            </div>
                         </div>
                     </div>
-                    <div id="ground-items">
-                        <!-- Drops grid -->
-                    </div>
+                    <div id="ground-items"></div>
                 </div>
-
-        </div>
+            </section>
         </section>
     </div>
 
-    <!-- Hidden Elements (Shop, Victory, Info) -->
-    <!-- Hidden Elements (Shop, Victory, Info) -->
-    <div id="shop-modal" class="hidden">
-        <div class="shop-content">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <h3>상점 (가격: <span id="shop-cost">100</span> G)</h3>
-                <button id="btn-close-shop" class="close-btn">×</button>
+    <div id="refinery-panel" class="hidden">
+        <div class="refinery-header">
+            <h2>아이템 제련소</h2>
+            <button id="btn-exit-refinery" class="close-btn">×</button>
+        </div>
+        <div class="refinery-content">
+            <div class="refine-container">
+                <div class="refinery-slot" id="refine-slot-1" data-slot="1">Main</div>
+                <div class="plus">+</div>
+                <div class="refinery-slot" id="refine-slot-2" data-slot="2">Sub</div>
+                <div class="equals">=</div>
+                <div class="refinery-slot result" id="refine-slot-result">?</div>
             </div>
-            <div style="display:flex; gap:10px; justify-content:center;">
-                <button id="btn-buy-weapon" class="game-btn">무기 구매</button>
-                <button id="btn-buy-ring" class="game-btn">반지 구매</button>
-            </div>
-            <div id="gold-display" style="color:gold; font-weight:bold; text-align:center; margin-top:10px;">0 G
+            <div class="refinery-controls">
+                <p id="refinery-msg">가방에서 아이템을 눌러 재료로 선택하세요.<br>같은 종류 2개를 합성합니다. 재료를 누르면 회수할 수 있어요.</p>
+                <button id="btn-fuse" class="game-btn full-width" disabled>합성 하기</button>
             </div>
         </div>
     </div>
 
-    <!-- Generic Info Modal Structure (Reused for all info popups) -->
     <div id="generic-modal" class="hidden">
-        <div class="shop-content" style="max-width:400px; text-align:left;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <div class="shop-content">
+            <div class="modal-header">
                 <h3 id="modal-title">정보</h3>
                 <button id="btn-close-generic" class="close-btn">×</button>
             </div>
-            <div id="modal-body" style="font-size:0.85rem; line-height:1.5; color:#ddd; white-space:pre-wrap;">
-            </div>
+            <div id="modal-body"></div>
         </div>
     </div>
 
     <div id="settings-modal" class="hidden">
         <div class="shop-content">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <div class="modal-header">
                 <h3>설정</h3>
                 <button id="btn-close-settings" class="close-btn">×</button>
             </div>
-            <div style="text-align:center; display:flex; gap:10px; justify-content:center; flex-direction:column;">
+            <div class="settings-content">
                 <div class="setting-row">
                     <label>배경음 (BGM)</label>
                     <input type="checkbox" id="chk-bgm" checked>
@@ -175,62 +190,55 @@
                     <label>효과음 (SFX)</label>
                     <input type="checkbox" id="chk-sfx" checked>
                 </div>
-                <hr style="border:0; border-top:1px solid #444; margin:10px 0;">
-                <button id="btn-manual-save" class="game-btn full-width" style="margin-bottom:5px;">게임 저장</button>
+                <hr>
+                <button id="btn-manual-save" class="game-btn full-width">게임 저장</button>
                 <button id="btn-manual-load" class="game-btn full-width">게임 불러오기</button>
-                <hr style="width:100%; border-color:#444; margin:10px 0;">
-                <button id="btn-info-credits" class="game-btn" style="background:#444; font-size:0.8rem;">제작자
-                    정보</button>
-                <button id="btn-bug-report" class="game-btn"
-                    style="background:#FAE100; color:#3B1E1E; font-weight:bold; font-size:0.8rem; margin-top:5px;">💬
-                    버그제보 오픈톡</button>
+                <hr>
+                <button id="btn-info-credits" class="game-btn muted">제작자 정보</button>
+                <button id="btn-bug-report" class="game-btn kakao">버그제보 오픈톡</button>
             </div>
         </div>
     </div>
 
     <div id="info-modal" class="hidden">
         <div class="shop-content">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <div class="modal-header">
                 <h3>게임 정보</h3>
                 <button id="btn-close-info" class="close-btn">×</button>
             </div>
-            <div style="text-align:center; line-height:1.6; font-size:0.9rem; color:#ccc;">
+            <div class="credits-body">
                 <p>제작자 : 민대식</p>
                 <p>마지막 업데이트 : 2025년 12월 16일</p>
-                <p>버그 및 유닉아이디어제보 :<br>ddokddogi@gmail.com</p>
+                <p>버그 및 유닉 아이디어 제보 :<br>ddokddogi@gmail.com</p>
             </div>
         </div>
     </div>
 
-    <!-- Patch Notes Modal -->
     <div id="patch-modal" class="hidden modal">
-        <div class="patch-content" style="position:relative;">
-            <button id="btn-close-patch" class="close-x"
-                style="position:absolute; top:10px; right:15px; background:none; border:none; color:#fff; font-size:1.5rem; cursor:pointer;">&times;</button>
-            <h2 style="margin-top:0;">패치 노트</h2>
-            <pre id="patch-text"
-                style="text-align:left; white-space:pre-wrap; font-family:inherit; color:#eee; max-height:60vh; overflow-y:auto;"></pre>
+        <div class="patch-content">
+            <div class="modal-header">
+                <h2>패치 노트</h2>
+                <button id="btn-close-patch" class="close-btn">×</button>
+            </div>
+            <pre id="patch-text"></pre>
         </div>
     </div>
 
     <div id="victory-overlay" class="hidden">
         <div class="victory-content">
             <h1>승리!</h1>
-            <p>악마 샌드백을 처치했습니다!</p>
+            <p>악마 샌드백을 처치했습니다.</p>
             <div class="stat-box">
-                <div>시간: <span id="victory-time">0s</span></div>
+                <div>시간: <span id="victory-time">0초</span></div>
                 <div>총 데미지: <span id="victory-damage">0</span></div>
             </div>
-            <button class="game-btn" onclick="location.reload()">다시 하기</button>
-            <div style="margin-top:10px;">
-                <button id="btn-continue" class="game-btn" style="background:#444; border-color:#666;">게임
-                    계속하기</button>
+            <div class="victory-actions">
+                <button class="game-btn" onclick="location.reload()">다시 하기</button>
+                <button id="btn-continue" class="game-btn muted">계속 플레이</button>
             </div>
         </div>
     </div>
-    </section>
-    </div>
-    <script src="script_v3.js"></script>
-</body>
 
+    <script src="script_v3.js?v=20260926"></script>
+</body>
 </html>
