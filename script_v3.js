@@ -50,11 +50,6 @@ DPS 표기 변경: 의미가 모호했던 '최근 1분 데미지'를 삭제하�
 
 
 
----------------------
-25년 12월 16일 오후 11시30분 (최적화)
-전동드릴 최적화: 공격 속도가 빨라져도 렉이 걸리지 않도록 로직을 개선했습니다.
-(초당 30회 이상 공격 시 화면 갱신은 30프레임으로 제한되고 데미지는 몰아서 들어갑니다.)
-
 .`;
 // ============================================
 
@@ -86,11 +81,11 @@ const MELODY = [
 ];
 
 const startBGM = () => {
-    if (bgmInterval || !audioCtx) return;
+    if (bgmInterval) return;
     if (audioCtx.state === 'suspended') audioCtx.resume();
     // Loop
     bgmInterval = setInterval(() => {
-        if (isBgmMuted || document.hidden) return;
+        if (isBgmMuted) return; // Silent but running
         // ... (Existing BGM Logic)
         const note = MELODY[bgmNoteIndex % MELODY.length];
         bgmNoteIndex++;
@@ -115,7 +110,7 @@ const stopBGM = () => {
 };
 
 const playSound = (type) => {
-    if (isSfxMuted || !audioCtx || document.hidden) return;
+    if (isSfxMuted) return;
     // ... (Existing SFX Logic)
     if (audioCtx.state === 'suspended') audioCtx.resume();
     const osc = audioCtx.createOscillator();
@@ -165,7 +160,7 @@ const playSound = (type) => {
 };
 
 // ... (Rest of AffixSystem and Item class unchanged, assuming they are before loop starts or not in this replace block) ...
-// NOTE: Since I am replacing the top 60 lines, I need to be careful.
+// NOTE: Since I am replacing the top 60 lines, I need to be careful. 
 // Actually, I will use a separate block for the bottom logic changes.
 // This block handles the Audio overhaul at the top.
 
@@ -224,7 +219,7 @@ class AffixSystem {
         // Base unique chance 0.2% -> Increased slightly to accommodate more items or keep same?
         // User asked for "Awl" to have higher drop rate.
         // Let's say: Normal Unique Chance 0.2%. If hit, pick which unique.
-        // Or:
+        // Or: 
         // 0.1% Bone Unity
         // 0.1% Hornet
         // 0.3% Awl (Higher)
@@ -398,7 +393,6 @@ class Item {
     }
 }
 
-
 class Character {
     constructor() {
         this.level = 1;
@@ -408,7 +402,7 @@ class Character {
     }
     gainXp(amount) {
         this.xp += amount;
-        while (this.xp >= this.maxXp) {
+        if (this.xp >= this.maxXp) {
             this.level++;
             this.xp -= this.maxXp;
             this.maxXp = Math.floor(this.maxXp * 1.5);
@@ -427,6 +421,7 @@ class Game {
         this.sandbagLevel = 1;
         this.sandbagMaxHp = 100;
         this.sandbagHp = 100;
+
         this.damage = 0;
         this.drops = [];
         this.inventory = [];
@@ -434,34 +429,24 @@ class Game {
         this.skeletons = 0;
         this.poisonInstances = [];
         this.deleteMode = false;
+
         this.gold = 0;
+        this.goldMode = false;
         this.goldMode = false;
         this.lastTotalDmg = 10;
         this.damageHistory = [];
-        this.refinerySlots = { 1: null, 2: null };
-        this.refineryResult = null;
-        this.storageKey = 'sb_save_v2';
-        this.draggingItemIdx = null;
-        this.draggingDropIdx = null;
-        this.draggingEquipKey = null;
-        this.activePanel = 'inventory';
-        this.isBossBattle = false;
-        this.targetVersion = 0;
-        this.autoSaveEnabled = false;
+        this.storageKey = 'sb_save_v1';
 
+        // Drag State
+        this.draggingItemIdx = null;
+
+        // Dom
         this.sandbag = document.getElementById('sandbag');
         this.hpBar = document.getElementById('hp-bar');
         this.hpText = document.getElementById('hp-text');
+        this.groundItemsDiv = document.getElementById('ground-items');
         this.inventoryGrid = document.getElementById('inventory-grid');
         this.tooltip = document.querySelector('.tooltip-container') || this.createTooltip();
-        this.startOverlay = document.getElementById('start-overlay');
-        this.attackHint = document.getElementById('attack-hint');
-        this.sandbag.addEventListener('keydown', event => {
-            if (event.key !== 'Enter' && event.key !== ' ') return;
-            event.preventDefault();
-            const rect = this.sandbag.getBoundingClientRect();
-            this.punch({ clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2 });
-        });
 
         this.initDOM();
         this.init();
@@ -472,11 +457,7 @@ class Game {
         this.skelTimer = 0;
         this.skelTimer = 0;
         this.updateUI(); // Ensure DPS/Score are shown immediately
-        this.gameRunning = false;
-        this.renderEquipment();
-        this.renderInventory();
-        this.renderDrops();
-        this.saveInterval = setInterval(() => this.autoSave(true), 5000);
+        this.gameRunning = true;
     }
 
     createTooltip() {
@@ -484,37 +465,6 @@ class Game {
         d.className = 'tooltip-container'; d.style.display = 'none';
         document.body.appendChild(d);
         return d;
-    }
-
-    setActivePanel(panel) {
-        this.activePanel = panel;
-    }
-
-    clearTransientEffects() {
-        this.targetVersion++;
-        this.poisonInstances = [];
-        document.querySelectorAll('.arrow, .damage-text').forEach(el => el.remove());
-    }
-
-    refreshDerivedState() {
-        const stats = this.calculateStats();
-        this.spawnSkeletons(stats.skeletonCount);
-        this.updateSandbagUI();
-        this.renderEquipment();
-        this.renderInventory();
-        this.renderDrops();
-        this.updateUI();
-    }
-
-    autoSave(silent = true) {
-        if (!this.autoSaveEnabled) return;
-        this.saveGame(silent);
-    }
-
-    hideStartOverlay() {
-        this.gameRunning = true;
-        this.autoSaveEnabled = !this.saveLoadFailed;
-        if (this.startOverlay) this.startOverlay.classList.add('hidden');
     }
 
     initDOM() {
@@ -525,53 +475,15 @@ class Game {
             btn.onclick = () => this.changeSandbagLevel(parseInt(btn.dataset.change));
         });
         document.getElementById('btn-boss').onclick = () => {
-            this.startTime = Date.now();
-            this.isBossBattle = true;
             this.sandbagLevel = 1000;
-            this.changeSandbagLevel(0);
-            this.setActivePanel('drops');
+            this.changeSandbagLevel(0); // Trigger update
         };
 
-        // Refinery UI (Refactor V2)
-        const btnRefinery = document.getElementById('btn-open-refinery');
-        if (btnRefinery) btnRefinery.onclick = () => this.toggleRefineryMode(true);
-
-        document.getElementById('btn-exit-refinery').onclick = () => this.toggleRefineryMode(false);
-        document.getElementById('btn-fuse').onclick = () => this.fuseItems();
-
-        // Claim Result Listener
-        const resSlot = document.getElementById('refine-slot-result');
-        if (resSlot) resSlot.onclick = () => this.claimRefineryResult();
-
-        // Equipment Toggle
-        const equipSlots = document.getElementById('equipment-slots');
-        const btnToggleEquip = document.getElementById('btn-toggle-equip');
-        if (btnToggleEquip) {
-            btnToggleEquip.onclick = () => {
-                const isCollapsed = equipSlots.classList.toggle('collapsed');
-                btnToggleEquip.textContent = isCollapsed ? '▲' : '▼';
-            };
-        }
-
-        document.querySelectorAll('.panel-tab').forEach(btn => {
-            btn.onclick = () => this.setActivePanel(btn.dataset.panel);
-        });
-        this.setActivePanel(window.innerWidth <= 900 ? 'inventory' : 'equip');
-
-        const btnStart = document.getElementById('btn-start-game');
-        if (btnStart) btnStart.onclick = () => {
-            this.loadGame(true);
-            this.hideStartOverlay();
-            startBGM();
-        };
-        const btnStartLoad = document.getElementById('btn-start-load');
-        if (btnStartLoad) btnStartLoad.onclick = () => {
-            this.loadGame(true);
-            this.hideStartOverlay();
-            startBGM();
-        };
-
-        /* ... (Rest of InitDOM) ... */
+        // Shop UI
+        // Shop UI
+        const shopModal = document.getElementById('shop-modal');
+        document.getElementById('btn-open-shop').onclick = () => shopModal.classList.remove('hidden');
+        document.getElementById('btn-close-shop').onclick = () => shopModal.classList.add('hidden');
 
         // Patch UI
         const patchModal = document.getElementById('patch-modal');
@@ -598,24 +510,78 @@ class Game {
             document.getElementById('btn-close-info').onclick = () => infoModal.classList.add('hidden');
         }
 
+        // Mobile Panel Toggle Check (Removed logic, just loop)
+        const mobileToggle = document.getElementById('mobile-panel-toggle');
+        const sidePanel = document.getElementById('side-panel');
+        if (mobileToggle && sidePanel) {
+            mobileToggle.onclick = () => {
+                const isActive = sidePanel.classList.toggle('active');
+                mobileToggle.textContent = isActive ? '❌' : '🎒';
+            };
+        }
+
         document.querySelectorAll('#loot-filter input').forEach(cb => {
             cb.onchange = () => this.renderDrops();
         });
 
-        document.getElementById('trash-can').onclick = () => this.toggleDeleteMode();
-        for (const id of [1, 2]) {
-            document.getElementById(`refine-slot-${id}`).onclick = () => {
-                const item = this.refinerySlots[id];
-                if (!item) return;
-                this.inventory.push(item);
-                this.setRefinerySlot(id, null);
-                this.renderInventory();
-                this.autoSave(true);
+        // Trash Can: Toggle Delete Mode AND Drop Target
+        const trash = document.getElementById('trash-can');
+        if (trash) {
+            trash.onclick = () => this.toggleDeleteMode();
+            // Desktop Drop to Delete
+            trash.ondragover = (e) => { e.preventDefault(); trash.classList.add('hover'); };
+            trash.ondragleave = () => trash.classList.remove('hover');
+            trash.ondrop = (e) => {
+                e.preventDefault();
+                trash.classList.remove('hover');
+                try {
+                    const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+                    if (data.source === 'inventory') {
+                        this.inventory.splice(data.index, 1);
+                        this.renderInventory();
+                    }
+                } catch (err) { console.error('Trash Drop Error', err); }
+            };
+        }
+
+        const goldToggle = document.getElementById('gold-mode-toggle');
+        if (goldToggle) goldToggle.onchange = (e) => this.goldMode = e.target.checked;
+
+        document.getElementById('btn-buy-weapon').onclick = () => this.buyItem('weapon');
+        document.getElementById('btn-buy-ring').onclick = () => this.buyItem('ring');
+
+
+
+        // Inventory Grid: Drop Target for Loot AND Unequip
+        const invGrid = document.getElementById('inventory-grid');
+        if (invGrid) {
+            invGrid.ondragover = (e) => e.preventDefault();
+            invGrid.ondrop = (e) => {
+                e.preventDefault();
+                try {
+                    const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+                    if (data.source === 'drop') {
+                        this.lootItem(data.index);
+                    } else if (data.source === 'equip') {
+                        // Unequip Logic
+                        const key = data.key;
+                        const item = this.equipment[key];
+                        if (item && this.inventory.length < 20) {
+                            this.equipment[key] = null;
+                            this.inventory.push(item);
+                            this.renderEquipment();
+                            this.renderInventory();
+                        } else if (this.inventory.length >= 20) {
+                            alert("인벤토리가 꽉 찼습니다.");
+                        }
+                    }
+                } catch (err) { }
             };
         }
 
         // Start BGM on first interaction
-        document.body.addEventListener('pointerdown', () => startBGM(), { once: true });
+        document.body.addEventListener('click', () => startBGM(), { once: true });
+        document.body.addEventListener('touchstart', () => startBGM(), { once: true });
 
         // Global User Interaction Handler for Tooltip Close
         document.body.addEventListener('touchstart', (e) => {
@@ -632,14 +598,21 @@ class Game {
         // Hover for Desktop
         document.addEventListener('mouseover', e => {
             const t = e.target.closest('[data-tooltip-html]');
-            if (t && window.matchMedia('(hover: hover)').matches) {
+            if (t) {
                 this.showTooltip(t.getAttribute('data-tooltip-html'), e.clientX, e.clientY);
             }
         });
         document.addEventListener('mousemove', e => {
-            if (this.tooltip.style.display === 'block') this.positionTooltip(e.clientX, e.clientY);
+            if (this.tooltip.style.display === 'block') {
+                const w = this.tooltip.offsetWidth;
+                const screenW = window.innerWidth;
+                let left = e.clientX + 15;
+                if (left + w > screenW) left = screenW - w - 10;
+
+                this.tooltip.style.left = left + 'px';
+                this.tooltip.style.top = (e.clientY + 15) + 'px';
+            }
         });
-        document.addEventListener('scroll', () => { this.tooltip.style.display = 'none'; }, true);
         document.addEventListener('mouseout', e => { if (e.target.closest('[data-tooltip-html]')) this.tooltip.style.display = 'none'; });
 
         this.initSlots();
@@ -660,38 +633,121 @@ class Game {
         document.getElementById('btn-info-intro').onclick = (e) => { e.stopPropagation(); this.showIntroInfo(); };
         document.getElementById('btn-close-generic').onclick = () => document.getElementById('generic-modal').classList.add('hidden');
 
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden) this.autoSave(true);
+        // Punch Listener (Global Background)
+        // Desktop: Click anywhere NOT on interactive elements
+        document.body.addEventListener('mousedown', (e) => {
+            // Ignore if clicking on buttons, inventory, scrollbars (if any), or specific UI panels
+            if (e.target.tagName === 'BUTTON' || e.target.closest('button') || e.target.closest('.interactive') || e.target.closest('.slot')) return;
+            // Also ignore if clicking inside modals (unless we want to close them? no, close btn exists)
+            if (e.target.closest('.shop-content')) return;
+
+            this.punch(e);
         });
-        window.addEventListener('beforeunload', () => this.autoSave(true));
+
+        // Mobile: Touch anywhere
+        document.body.addEventListener('touchstart', (e) => {
+            // Check first touch
+            const t = e.changedTouches[0];
+            if (t.target.tagName === 'BUTTON' || t.target.tagName === 'INPUT' || t.target.tagName === 'LABEL' ||
+                t.target.closest('button') || t.target.closest('label') || t.target.closest('.interactive') ||
+                t.target.closest('.slot') || t.target.closest('.shop-content')) return;
+
+            e.preventDefault(); // Stop zoom/scroll on game area
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const touch = e.changedTouches[i];
+                this.punch({ clientX: touch.clientX, clientY: touch.clientY });
+            }
+        }, { passive: false });
     }
 
     initSlots() {
-        const slots = document.getElementById('equipment-slots');
-        slots.replaceChildren();
-        for (const key of ['weapon1', 'weapon2', 'ring1', 'ring2']) {
-            const slot = document.createElement('div');
-            slot.className = 'slot equipment-slot ' + (key.startsWith('weapon') ? 'weapon-slot' : 'ring-slot');
-            slot.dataset.key = key;
-            slot.innerHTML = '<div class="slot-content"></div>';
-            slots.appendChild(slot);
-        }
+        const slotsDiv = document.getElementById('equipment-slots');
+        slotsDiv.innerHTML = '';
+
+        // Explicit Order and Naming
+        const config = [
+            { key: 'weapon1', label: '무기1' },
+            { key: 'weapon2', label: '무기2' },
+            { key: 'ring1', label: '반지1' },
+            { key: 'ring2', label: '반지2' }
+        ];
+
+        config.forEach(cfg => {
+            const div = document.createElement('div');
+            // Extract type for class (weapon or ring)
+            const type = cfg.key.startsWith('weapon') ? 'weapon-slot' : 'ring-slot';
+            div.className = `slot equipment-slot ${type}`;
+            div.setAttribute('data-key', cfg.key);
+            // User requested visual clarity: Silhouettes are primary, labels removed.
+            div.innerHTML = `<div class='slot-content'></div>`;
+
+            // Allow Drop (Equip)
+            div.ondragover = (e) => e.preventDefault();
+            div.ondrop = (e) => {
+                e.preventDefault();
+                try {
+                    const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+                    if (data.source === 'inventory') {
+                        this.equip(this.inventory[data.index], data.index, cfg.key);
+                    } else if (data.source === 'drop') {
+                        // FIX: Allow direct equip from ground
+                        if (this.inventory.length >= 20) return alert("인벤토리가 가득 찼습니다!");
+                        const item = this.drops[data.index];
+                        if (!item) return;
+
+                        // Loot it first
+                        this.drops.splice(data.index, 1);
+                        this.inventory.push(item);
+                        const newIdx = this.inventory.length - 1;
+
+                        // Then Equip
+                        this.equip(item, newIdx, cfg.key);
+                        this.renderDrops();
+                        // renderInventory called by equip usually? 
+                        // equip() calls renderInventory() and updateStats().
+                        // But wait, equip() takes item from inventory.
+                        // I just put it in inventory. So it's safe.
+                    }
+                } catch (err) { }
+            };
+
+            // Touch Drop Simulation Helper
+            div.setAttribute('data-equippable', cfg.key);
+            slotsDiv.appendChild(div);
+        });
+    }
+
+    lootItem(dropIdx) {
+        if (this.inventory.length >= 20) return alert("인벤토리가 가득 찼습니다!");
+        const item = this.drops[dropIdx];
+        if (!item) return;
+        this.drops.splice(dropIdx, 1);
+        this.inventory.push(item);
+        this.renderDrops();
+        this.renderInventory();
     }
 
     init() {
+        // HIT AREA: Sandbag Container (Whole Area)
         const hitArea = document.getElementById('sandbag-container');
         if (hitArea) {
-            hitArea.addEventListener('pointerdown', (e) => {
-                if (e.pointerType === 'mouse' && e.button !== 0) return;
-                if (e.target.closest('.ui-interactive') || e.target.closest('button') || e.target.closest('input') || e.target.closest('label') || e.target.closest('.slot') || e.target.closest('.shop-content')) return;
-                this.hideStartOverlay();
+            hitArea.addEventListener('mousedown', (e) => {
+                // Ignore clicks on buttons/modals if they bubble up (though buttons usually stopProp)
+                if (e.target.closest('button') || e.target.closest('.slot') || e.target.closest('.modal')) return;
                 this.punch(e);
             });
+            hitArea.addEventListener('touchstart', (e) => {
+                if (e.target.closest('button') || e.target.closest('.slot') || e.target.closest('.modal')) return;
+                e.preventDefault();
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    this.punch(e.changedTouches[i]);
+                }
+            }, { passive: false });
         }
 
         this.updateSandbagUI();
         this.updateShopUI();
-        // Storage may be unavailable in private or restricted webviews.
+        this.checkIntro();
 
         // Audio Settings Init
         const chkBgm = document.getElementById('chk-bgm');
@@ -714,8 +770,8 @@ class Game {
     }
 
     changeSandbagLevel(delta) {
-        let newLvl = Math.min(1000000, this.sandbagLevel + delta);
-        if (delta !== 0 && this.isBossBattle) this.isBossBattle = false;
+        if (!this.gameRunning) return;
+        let newLvl = this.sandbagLevel + delta;
         if (newLvl < 1) newLvl = 1;
         if (newLvl !== this.sandbagLevel || delta === 0) {
             this.sandbagLevel = newLvl;
@@ -740,19 +796,18 @@ class Game {
 
             // Boss HP x1000 (Applied on top if Boss Logic used, but Boss is fixed 1000?)
             // User logic: Boss is at Level 1000 (Specific Mode).
-            if (this.isBossBattle) this.sandbagMaxHp = 1000 * 100 * 1000;
+            if (this.sandbagLevel === 1000) this.sandbagMaxHp = 1000 * 100 * 1000;
 
             this.sandbagHp = this.sandbagMaxHp;
-            this.poisonInstances = [];
-            this.clearTransientEffects();
             this.updateSandbagUI();
+            this.updateShopUI();
         }
     }
 
     updateSandbagUI() {
         document.getElementById('sandbag-level-display').textContent = `샌드백 Lv.${this.sandbagLevel}`;
         this.updateHpBar();
-        if (this.isBossBattle) this.sandbag.classList.add('devil');
+        if (this.sandbagLevel === 1000) this.sandbag.classList.add('devil');
         else if (this.sandbagLevel >= 3000) {
             this.sandbag.classList.add('sandbag-high-level');
             this.sandbag.classList.remove('devil');
@@ -762,33 +817,66 @@ class Game {
         }
     }
 
-    updateShopUI() { /* Removed */ }
+    updateShopUI() { document.getElementById('shop-cost').textContent = this.sandbagLevel * 100; }
     updateHpBar() {
         const pct = Math.max(0, (this.sandbagHp / this.sandbagMaxHp) * 100);
         this.hpBar.style.width = `${pct}%`;
         this.hpText.textContent = `${Math.ceil(this.sandbagHp).toLocaleString()} / ${this.sandbagMaxHp.toLocaleString()}`;
     }
-    /* Gold System Removed
-    updateGoldUI() { ... }
-    buyItem(type) { ... }
-    */
+    updateGoldUI() {
+        // Update both top display and shop modal display
+        const text = `${this.gold.toLocaleString()} G`;
+        const top = document.getElementById('gold-display-top');
+        const shop = document.getElementById('gold-display'); // In shop modal
+        if (top) top.textContent = text;
+        if (shop) shop.textContent = text;
+    }
+
+    buyItem(type) {
+        const cost = this.sandbagLevel * 100;
+        if (this.gold < cost) return alert("골드가 부족합니다!");
+        if (this.inventory.length >= 20) return alert("인벤토리가 가득 찼습니다!");
+
+        this.gold -= cost;
+        this.updateGoldUI();
+
+        const item = AffixSystem.rollItem(type, this.sandbagLevel);
+        this.inventory.push(item);
+        this.renderInventory();
+    }
 
     // Tooltip Helper: Constrain to screen
     showTooltip(html, x, y) {
         this.tooltip.innerHTML = html;
         this.tooltip.style.display = 'block';
-        this.positionTooltip(x, y);
+
+        // Wait for render to get width
+        requestAnimationFrame(() => {
+            const w = this.tooltip.offsetWidth;
+            const h = this.tooltip.offsetHeight;
+            const screenW = window.innerWidth;
+
+            let left = x + 15;
+            let top = y + 15;
+
+            // Right Collision
+            if (left + w > screenW) {
+                left = screenW - w - 10;
+            }
+
+            // Bottom Collision (Fix: Move above cursor if clipping)
+            const screenH = window.innerHeight;
+            if (top + h > screenH) {
+                top = y - h - 15; // Move above
+            }
+
+            this.tooltip.style.left = left + 'px';
+            this.tooltip.style.top = top + 'px';
+        });
     }
 
-    positionTooltip(x, y) {
-        const w = this.tooltip.offsetWidth;
-        const h = this.tooltip.offsetHeight;
-        this.tooltip.style.left = Math.max(8, Math.min(x + 15, window.innerWidth - w - 8)) + 'px';
-        this.tooltip.style.top = Math.max(8, Math.min(y + 15, window.innerHeight - h - 8)) + 'px';
-    }
-
-    punch(e, silent = false) {
-        if (!this.gameRunning || document.hidden) return;
+    punch(e) {
+        if (!this.gameRunning) return;
         // Debounce Manual Hits to prevent double-fire
         if (e) {
             const now = Date.now();
@@ -828,7 +916,7 @@ class Game {
         if (stats.demonSandbag && Math.random() < 0.01) {
             const jackpot = getRandomInt(1, 100000000);
             totalDmg = jackpot; // Override or Add? Usually Jackpot overrides.
-            // But if normal dmg is high, it might be a loss?
+            // But if normal dmg is high, it might be a loss? 
             // 100M is huge. Normal dmg is low. Assuming Override is benefit.
             // Let's make it additive to be safe? "Give 1~100m damage".
             // Since it's a specific effect, let's allow it to Set the damage.
@@ -843,29 +931,26 @@ class Game {
             this.showDamageNumber(jx, jy, "👿" + jackpot.toLocaleString(), true, '#ff0000');
         }
 
-        const hitTarget = this.targetVersion;
         this.dealDamage(totalDmg, isCrit, e ? e.clientX : null, e ? e.clientY : null);
 
-        if (this.gameRunning && hitTarget === this.targetVersion && stats.poisonPercent > 0) {
+        if (stats.poisonPercent > 0) {
             if (Math.random() * 100 < (10 + stats.poisonChance)) {
                 this.applyPoison(totalDmg * (stats.poisonPercent / 100), stats.poisonDurationInfo);
             }
         }
 
-        if (e || !silent) {
+        if (e) {
             this.playPunchAnim();
-            if (this.attackHint) this.attackHint.classList.add('hidden');
-            if (stats.projectiles > 0) this.showProjectiles(stats.projectiles, (e ? e.clientX : null), (e ? e.clientY : null));
+            if (stats.projectiles > 0) this.showProjectiles(stats.projectiles, e.clientX, e.clientY);
             this.spawnSkeletons(stats.skeletonCount);
         }
     }
 
     dealDamage(amount, isCrit = false, x = null, y = null, silent = false) {
-        if (!this.gameRunning || !Number.isFinite(amount) || amount <= 0) return;
         amount = Math.ceil(amount);
         this.damage += amount;
         this.sandbagHp -= amount;
-        this.damageHistory = [];
+        this.damageHistory.push({ t: Date.now(), v: amount });
 
         if (x === null) {
             const rect = this.sandbag.getBoundingClientRect();
@@ -884,23 +969,20 @@ class Game {
 
 
     killSandbag() {
-        if (this.isBossBattle) { // BOSS KILL
+        if (this.sandbagLevel === 1000) { // BOSS KILL
             if (!this.gameRunning) return; // Prevent double trigger
             this.gameRunning = false;
-            this.clearTransientEffects();
             clearInterval(this.poisonInterval);
             clearInterval(this.skelInterval);
             document.getElementById('victory-overlay').classList.remove('hidden');
             const timeSec = ((Date.now() - this.startTime) / 1000).toFixed(1);
             document.getElementById('victory-time').textContent = timeSec + '초';
             document.getElementById('victory-damage').textContent = this.damage.toLocaleString();
-            this.spawnBossDrop();
-            this.autoSave(true);
+            this.spawnBossDrop(); // Drop Unique after win
             return;
         }
 
         this.char.gainXp(this.sandbagMaxHp);
-        this.clearTransientEffects();
         this.sandbagHp = this.sandbagMaxHp;
         this.sandbag.classList.add('dead');
         setTimeout(() => this.sandbag.classList.remove('dead'), 500);
@@ -917,7 +999,7 @@ class Game {
     }
 
     tickPoison() {
-        if (!this.gameRunning || document.hidden) return;
+        if (!this.gameRunning) return;
         const now = Date.now();
         this.poisonInstances = this.poisonInstances.filter(p => p.endTime > now);
 
@@ -947,7 +1029,7 @@ class Game {
                 // Default position is handled by CSS, but we need relative offsets.
                 // Or absolute positioning inside container?
                 // Let's assume container is relative and skeleton is absolute.
-                // But current CSS likely positions .skeleton fixed?
+                // But current CSS likely positions .skeleton fixed? 
                 // Let's check CSS if possible, but assuming standard flow or absolute.
                 // User said: "기존궁수의 왼쪽위 5픽셀씩".
                 // If index 0 is at (0,0), index 1 is at (-5, -5).
@@ -966,7 +1048,7 @@ class Game {
     }
 
     skeletonShoot() {
-        if (!this.gameRunning || document.hidden || !this.skeletons) return;
+        if (!this.gameRunning || !this.skeletons) return;
         const stats = this.calculateStats();
         // Base Tick is 1000ms. If speed +50%, we add 1500ms worth of progress per tick?
         // Or reduce threshold?
@@ -979,7 +1061,7 @@ class Game {
         else if (stats.skelSpeedBonus > 0) spdMult += (stats.skelSpeedBonus / 100);
         const threshold = 1000 / spdMult;
 
-        while (this.skelTimer >= threshold) {
+        if (this.skelTimer >= threshold) {
             this.skelTimer -= threshold; // Keep remainder
 
             let dmg = 10; // Base Minion Damage (Fixed)
@@ -1006,11 +1088,10 @@ class Game {
             const skelElements = document.querySelectorAll('.skeleton');
             const sb = document.getElementById('sandbag');
 
-            const targetVersion = this.targetVersion;
             skelElements.forEach(skel => {
                 for (let i = 0; i < arrows; i++) {
                     setTimeout(() => {
-                        if (!this.gameRunning || targetVersion !== this.targetVersion || !skel.isConnected) return;
+                        if (!this.gameRunning) return;
 
                         if (skel && sb) {
                             const sRect = skel.getBoundingClientRect();
@@ -1032,10 +1113,7 @@ class Game {
                                 arrow.style.left = (bRect.left + bRect.width / 2) + 'px';
                                 arrow.style.top = (bRect.top + bRect.height / 2) + 'px';
                             });
-                            setTimeout(() => {
-                                arrow.remove();
-                                if (targetVersion === this.targetVersion && skel.isConnected) this.dealDamage(dmg);
-                            }, 400);
+                            setTimeout(() => { arrow.remove(); this.dealDamage(dmg); }, 400);
                         } else { this.dealDamage(dmg); }
                     }, i * 200);
                 }
@@ -1052,13 +1130,6 @@ class Game {
             flatDamage: 0, minionCopyDmg: 0
         };
         ['ring1', 'ring2'].forEach(k => { var i = this.equipment[k]; if (i) i.affixes.forEach(a => { if (a.stat === 'weaponEffectScale') s.weaponEffectScale += a.value; }); });
-        for (const [source, target] of [['ring1', 'ring2'], ['ring2', 'ring1']]) {
-            if (this.equipment[source]?.name === '오목거울 반지') {
-                this.equipment[target]?.affixes.forEach(a => {
-                    if (a.stat === 'weaponEffectScale') s.weaponEffectScale += a.value * 2;
-                });
-            }
-        }
         ['weapon1', 'weapon2', 'ring1', 'ring2'].forEach(k => {
             const i = this.equipment[k]; if (!i) return;
             // Absurdity handles itself via baseDamage
@@ -1103,9 +1174,12 @@ class Game {
                     if (a.stat === 'projectiles') s.projectiles += v;
                     if (a.stat === 'poisonDmg') s.poisonPercent += v;
                     if (a.stat === 'poisonChance') s.poisonChance += v;
+                    if (a.stat === 'summonSkeleton') s.skeletonCount = (s.skeletonCount || 0) + 1; // Mirror adds +1 or copy value? Mirror doubles value usually.
+                    // But summonSkeleton value IS count. So a.value * 2? No, Mirror logic above does `v = a.value * scale * 2`.
                     if (a.stat === 'summonSkeleton') s.skeletonCount += v;
                     if (a.stat === 'minionDmg') s.minionDmg += v;
                     if (a.stat === 'skeletonArrow') s.skelArrows += v;
+                    if (a.stat === 'weaponEffectScale') s.weaponEffectScale += v;
                     if (a.stat === 'minionCopyDmg') s.minionCopyDmg += v;
                     if (a.stat === 'skelSpeedBonus') s.skelSpeedBonus += v;
                     if (a.stat === 'uniqueBoneUnity') s.boneUnity = true;
@@ -1127,52 +1201,14 @@ class Game {
             if (this.equipment[k] && this.equipment[k].name === "악마 샌드백") s.demonSandbag = true;
         });
 
-        // Handle Electric Drill Loop (Optimized)
+        // Handle Electric Drill Loop
         if (s.drillRate > 0) {
-            if (!this.drillInterval || s.drillRate !== this.currentDrillRate) {
+            if (!this.drillInterval || this.drillRate !== this.currentDrillRate) {
                 if (this.drillInterval) clearInterval(this.drillInterval);
                 this.currentDrillRate = s.drillRate;
-
-                // Optimization: If rate is too high (> 30/sec), batch the hits.
-                // Minimum interval 33ms (approx 30 FPS cap for logic)
-                let interval = 1000 / s.drillRate;
-                let batchCount = 1;
-
-                if (interval < 33) {
-                    interval = 33; // Clamp to ~30ms
-                    // Calculate how many hits per 33ms
-                    // ex: rate 100 -> 10ms interval. We want 33ms.
-                    // 33 / 10 = 3.3 hits per tick.
-                    // We can probability check the decimal or just store accumulator.
-                    // Simple approach: batchCount = s.drillRate / (1000 / 33) = s.drillRate * 0.033
-                }
-
-                this.drillAccumulator = 0;
-
                 this.drillInterval = setInterval(() => {
-                    if (this.gameRunning) {
-                        if (interval === 33) {
-                            // High speed logic
-                            this.drillAccumulator += (s.drillRate * 0.033);
-                            let count = Math.floor(this.drillAccumulator);
-                            if (count > 0) {
-                                this.drillAccumulator -= count;
-                                // Execute 'count' punches
-                                // To avoid lag from sound/visuals, we might want to aggregate damage?
-                                // element.punch() handles visuals. Calling it 100 times in a loop is bad.
-                                // We need a multi-punch method or loop carefully.
-                                // Let's simplify: loop punch logic but suppress visuals for all but one?
-                                for (let i = 0; i < count; i++) {
-                                    // Only show visual/sound on the last one to save performance
-                                    this.punch(null, i < count - 1);
-                                }
-                            }
-                        } else {
-                            // Low speed logic (Normal)
-                            this.punch(null);
-                        }
-                    }
-                }, interval);
+                    if (this.gameRunning) this.punch(null);
+                }, 1000 / s.drillRate);
             }
         } else {
             if (this.drillInterval) { clearInterval(this.drillInterval); this.drillInterval = null; this.currentDrillRate = 0; }
@@ -1182,7 +1218,15 @@ class Game {
     }
 
     spawnDrop() {
-
+        if (this.goldMode) {
+            const amount = this.sandbagLevel * getRandomInt(5, 15);
+            this.gold += amount; this.updateGoldUI();
+            const rect = this.sandbag.getBoundingClientRect();
+            const el = document.createElement('div'); el.className = 'gold-text'; el.textContent = `+${amount} G`;
+            el.style.left = (rect.left + rect.width / 2) + 'px'; el.style.top = (rect.top) + 'px';
+            document.body.appendChild(el); setTimeout(() => el.remove(), 1000); playSound('coin'); return;
+        }
+        if (this.drops.length >= 100) this.drops.shift();
         const types = ['weapon', 'ring', 'weapon', 'ring'];
         const type = types[Math.floor(Math.random() * types.length)];
         const item = AffixSystem.rollItem(type, this.sandbagLevel);
@@ -1193,81 +1237,216 @@ class Game {
         this.renderDrops();
     }
 
-    makeItemButton(item, action) {
-        const el = document.createElement('button');
-        el.type = 'button';
-        el.className = `item ${item.rarity}`;
-        el.setAttribute('aria-label', `${item.name}, 레벨 ${item.level}`);
-        const icon = document.createElement('span');
-        icon.textContent = item.icon;
-        const level = document.createElement('span');
-        level.className = 'item-level';
-        level.textContent = item.level;
-        el.append(icon, level);
-        el.setAttribute('data-tooltip-html', item.getTooltipHTML());
-        el.onclick = action;
-        return el;
-    }
-
-    itemMenu(item, actions) {
-        this.tooltip.style.display = 'none';
-        this.showGenericModal(item.name, '');
-        const body = document.getElementById('modal-body');
-        body.innerHTML = item.getTooltipHTML();
-        for (const [label, action] of actions) {
-            const button = document.createElement('button');
-            button.className = 'game-btn';
-            button.textContent = label;
-            button.onclick = () => {
-                document.getElementById('generic-modal').classList.add('hidden');
-                action();
-                this.updateUI();
-                this.autoSave(true);
-            };
-            body.appendChild(button);
-        }
-    }
-
     renderDrops() {
-        // Migrate legacy ground drops into the single owned-item collection.
-        this.inventory.push(...this.drops);
-        this.drops = [];
-        this.renderInventory();
+        this.groundItemsDiv.innerHTML = '';
+        const filters = Array.from(document.querySelectorAll('#loot-filter input:checked')).map(cb => cb.dataset.filter);
+        const visibleDrops = this.drops.filter(i => (filters.includes(i.rarity) || i.rarity === 'unique'));
+        const show = visibleDrops.slice(-20).reverse();
+
+        for (let i = 0; i < 20; i++) {
+            const slot = document.createElement('div');
+            slot.className = 'slot'; // Reuse slot class for sizing
+
+            if (show[i]) {
+                const item = show[i];
+                const el = document.createElement('div');
+                el.className = `ground-item ${item.rarity}`;
+                el.innerHTML = `${item.icon}<div class='item-level'>${item.level}</div>`;
+                el.setAttribute('data-tooltip-html', item.getTooltipHTML());
+
+                let clicks = 0;
+                let timer = null;
+                el.onclick = (e) => {
+                    e.preventDefault();
+                    clicks++;
+                    if (clicks === 1) {
+                        timer = setTimeout(() => {
+                            clicks = 0;
+                            const rect = el.getBoundingClientRect();
+                            this.showTooltip(item.getTooltipHTML(), rect.right, rect.top);
+                        }, 250);
+                    } else {
+                        clearTimeout(timer);
+                        clicks = 0;
+                        this.lootItem(this.drops.indexOf(item)); // Use helper
+                    }
+                };
+
+                // Desktop Drag (Loot)
+                el.setAttribute('draggable', 'true');
+                el.style.touchAction = 'none'; // FIX: Force touch drag only
+                el.ondragstart = (e) => {
+                    e.dataTransfer.setData('text/plain', JSON.stringify({ source: 'drop', index: this.drops.indexOf(item) }));
+                };
+
+                // Touch Drag (Loot)
+                el.ontouchstart = (e) => {
+                    this.draggingDropIdx = this.drops.indexOf(item);
+                    this.touchStartTime = Date.now();
+                };
+                el.ontouchmove = (e) => this.handleTouchMove(e, el);
+                el.ontouchend = (e) => {
+                    // Remove Ghost
+                    this.removeGhost();
+                    // Check Drop
+                    const touch = e.changedTouches[0];
+                    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+
+                    if (target) {
+                        const equipSlot = target.closest('.slot[data-equippable]');
+                        const invGrid = target.closest('#inventory-grid');
+
+                        if (invGrid) {
+                            this.lootItem(this.draggingDropIdx);
+                        } else if (equipSlot) {
+                            // FIX: Mobile Drop to Equip from Ground
+                            if (this.inventory.length >= 20) {
+                                alert("인벤토리가 가득 찼습니다!");
+                            } else {
+                                const item = this.drops[this.draggingDropIdx];
+                                if (item) {
+                                    const key = equipSlot.getAttribute('data-key');
+                                    // Loot first
+                                    this.drops.splice(this.draggingDropIdx, 1);
+                                    this.inventory.push(item);
+                                    const newIdx = this.inventory.length - 1;
+                                    // Equip
+                                    this.equip(item, newIdx, key);
+                                    this.renderDrops();
+                                }
+                            }
+                        }
+                    }
+                    this.draggingDropIdx = null;
+                };
+
+                slot.appendChild(el);
+            }
+            this.groundItemsDiv.appendChild(slot);
+        }
     }
 
     renderInventory() {
-        this.inventoryGrid.replaceChildren();
-        const filters = Array.from(document.querySelectorAll('#loot-filter input:checked')).map(cb => cb.dataset.filter);
-        const visible = this.inventory.filter(i => filters.includes(i.rarity) || i.rarity === 'unique').slice().reverse();
-        for (const item of visible) {
-            this.inventoryGrid.appendChild(this.makeItemButton(item, () => {
-                const actions = [
-                    ['장착하기', () => this.autoEquip(item, this.inventory.indexOf(item))],
-                    ['제련 재료로 선택', () => {
-                        const id = !this.refinerySlots[1] ? 1 : !this.refinerySlots[2] ? 2 : null;
-                        if (!id || this.refineryResult) return alert('제련소의 재료 또는 결과물을 먼저 회수하세요.');
-                        this.inventory.splice(this.inventory.indexOf(item), 1);
-                        this.setRefinerySlot(id, item);
-                        this.renderInventory();
-                        this.toggleRefineryMode(true);
-                    }],
-                    ['삭제하기', () => {
-                        if (!confirm(item.name + ' 아이템을 삭제할까요?')) return;
-                        this.inventory.splice(this.inventory.indexOf(item), 1);
-                        this.renderInventory();
-                    }]
-                ];
-                this.itemMenu(item, this.deleteMode ? [actions[2]] : actions);
-            }));
+        this.inventoryGrid.innerHTML = '';
+        for (let i = 0; i < 20; i++) {
+            const slot = document.createElement('div'); slot.className = 'slot';
+            // Allow dropping loot here directly? handled by grid parent ondrop
+
+            if (this.inventory[i]) {
+                const item = this.inventory[i];
+                const el = document.createElement('div');
+                el.className = `item ${item.rarity} ${item.type}`;
+                el.innerHTML = `${item.icon}<div class='item-level'>${item.level}</div>`;
+                if (item.rarity === 'unique') el.classList.add('unique');
+                el.setAttribute('data-tooltip-html', item.getTooltipHTML());
+                el.setAttribute('draggable', 'true');
+                el.style.touchAction = 'none'; // FIX: Force touch drag only
+
+                // --- DRAG EVENTS (DESKTOP) ---
+                el.ondragstart = (e) => {
+                    e.dataTransfer.setData('text/plain', JSON.stringify({ source: 'inventory', index: i }));
+                    this.draggingItemIdx = i; // fallback
+                };
+
+                // --- TOUCH DRAG EVENTS (MOBILE) ---
+                el.ontouchstart = (e) => {
+                    this.draggingItemIdx = i;
+                    this.touchStartTime = Date.now();
+                    this.touchStartX = e.touches[0].clientX;
+                    this.touchStartY = e.touches[0].clientY;
+                    this.dragGhost = null; // Reset ghost
+                };
+                el.ontouchmove = (e) => this.handleTouchMove(e, el);
+
+                el.ontouchend = (e) => {
+                    this.removeGhost();
+                    const touch = e.changedTouches[0];
+                    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+
+                    // Drag Drop Logic
+                    if (this.draggingItemIdx !== null && (Math.abs(touch.clientX - this.touchStartX) > 10 || Math.abs(touch.clientY - this.touchStartY) > 10)) {
+                        if (target) {
+                            const slot = target.closest('.slot[data-equippable]');
+                            if (slot) {
+                                const key = slot.getAttribute('data-key');
+                                this.equip(item, i, key);
+                            } else if (target.closest('#trash-can')) {
+                                this.inventory.splice(i, 1);
+                                this.renderInventory();
+                            }
+                        }
+                    } else {
+                        // It was a Tap
+                        const now = Date.now();
+                        // FIX: Check delete mode on Tap
+                        if (this.deleteMode) {
+                            this.inventory.splice(i, 1);
+                            this.renderInventory();
+                            this.draggingItemIdx = null;
+                            return;
+                        }
+
+                        if (this.lastTapTime && (now - this.lastTapTime < 300) && this.lastTapItemIdx === i) {
+                            // DOUBLE TAP -> Auto Equip
+                            this.autoEquip(item, i);
+                            this.lastTapTime = 0; // Reset
+                        } else {
+                            // Single Tap -> Tooltip
+                            const rect = el.getBoundingClientRect();
+                            this.showTooltip(item.getTooltipHTML(), rect.right, rect.top);
+                            this.lastTapTime = now;
+                            this.lastTapItemIdx = i;
+                        }
+                    }
+                    this.draggingItemIdx = null;
+                };
+
+                // Desktop Click
+                el.onclick = (e) => {
+                    if (e.pointerType === 'mouse') {
+                        if (this.deleteMode) {
+                            this.inventory.splice(i, 1);
+                            this.renderInventory();
+                        } else {
+                            const rect = el.getBoundingClientRect();
+                            this.showTooltip(item.getTooltipHTML(), rect.right, rect.top);
+                        }
+                    }
+                };
+
+                slot.appendChild(el);
+            }
+            this.inventoryGrid.appendChild(slot);
         }
-        if (!visible.length) this.inventoryGrid.innerHTML = '<p class="empty-state">' + (this.inventory.length ? '필터에 맞는 아이템이 없어요.' : '샌드백을 격파하면 아이템이 자동으로 모여요.') + '</p>';
         document.getElementById('inv-count').textContent = this.inventory.length;
     }
 
+    // Shared Touch Move Logic
+    handleTouchMove(e, el) {
+        if (this.draggingItemIdx !== null || this.draggingDropIdx !== null) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            if (!this.dragGhost) {
+                this.dragGhost = el.cloneNode(true);
+                this.dragGhost.style.position = 'fixed';
+                this.dragGhost.style.zIndex = '9999';
+                this.dragGhost.style.pointerEvents = 'none';
+                this.dragGhost.style.width = '50px';
+                this.dragGhost.style.height = '50px';
+                this.dragGhost.style.opacity = '0.8';
+                this.dragGhost.style.background = '#444';
+                this.dragGhost.style.borderRadius = '5px';
+                document.body.appendChild(this.dragGhost);
+            }
+            this.dragGhost.style.left = (touch.clientX - 25) + 'px';
+            this.dragGhost.style.top = (touch.clientY - 25) + 'px';
+        }
+    }
+    removeGhost() { if (this.dragGhost) { this.dragGhost.remove(); this.dragGhost = null; } }
+
     autoEquip(item, idx) {
         // Find best slot
-        if (!item || idx < 0) return;
-        const type = item.type;
+        const type = item.type; // 'weapon' or 'ring'
         let targetKey = null;
 
         // 1. Check for empty slots
@@ -1285,7 +1464,7 @@ class Game {
     }
 
     equip(item, idx, targetSlotKey) {
-        if (item && idx >= 0 && this.inventory[idx] === item && targetSlotKey) {
+        if (targetSlotKey) {
             const keyType = targetSlotKey.startsWith('weapon') ? 'weapon' : 'ring';
             if (item.type !== keyType) return; // Wrong slot type
 
@@ -1294,25 +1473,70 @@ class Game {
             if (oldItem) this.inventory.push(oldItem);
 
             this.equipment[targetSlotKey] = item;
-            this.renderEquipment(); this.renderInventory(); this.updateUI(); this.autoSave(true);
+            this.renderEquipment(); this.renderInventory();
         }
     }
 
     renderEquipment() {
-        for (const key of Object.keys(this.equipment)) {
-            const slot = document.querySelector(`.slot[data-key="${key}"] .slot-content`);
-            slot.replaceChildren();
-            const item = this.equipment[key];
-            if (!item) continue;
-            slot.appendChild(this.makeItemButton(item, () => this.itemMenu(item, [
-                ['장착 해제', () => {
-                    this.equipment[key] = null;
-                    this.inventory.push(item);
-                    this.renderEquipment();
-                    this.renderInventory();
-                }]
-            ])));
-        }
+        ['weapon1', 'weapon2', 'ring1', 'ring2'].forEach(k => {
+            const div = document.querySelector(`.slot[data-key="${k}"] .slot-content`);
+            div.innerHTML = '';
+            const i = this.equipment[k];
+            if (i) {
+                const el = document.createElement('div'); el.className = `item ${i.rarity} ${i.type}`;
+                if (i.rarity === 'unique') el.classList.add('unique');
+                el.style.width = '100%'; el.style.height = '100%';
+                el.innerHTML = `${i.icon}<div class='item-level'>${i.level}</div>`;
+                el.setAttribute('data-tooltip-html', i.getTooltipHTML());
+                el.setAttribute('data-tooltip-html', i.getTooltipHTML());
+                el.style.touchAction = 'none';
+
+                // Click -> Show Tooltip (User Request)
+                el.onclick = (e) => {
+                    const rect = el.getBoundingClientRect();
+                    this.showTooltip(i.getTooltipHTML(), rect.right, rect.top);
+                };
+
+                // Drag -> Unequip preparation
+                el.setAttribute('draggable', 'true');
+                el.ondragstart = (e) => {
+                    e.dataTransfer.setData('text/plain', JSON.stringify({ source: 'equip', key: k }));
+                };
+                el.ontouchstart = (e) => {
+                    this.touchStartTime = Date.now();
+                    this.touchStartX = e.touches[0].clientX;
+                    this.touchStartY = e.touches[0].clientY;
+                    this.draggingEquipKey = k;
+                };
+                el.ontouchmove = (e) => this.handleTouchMove(e, el);
+                el.ontouchend = (e) => {
+                    this.removeGhost();
+                    const touch = e.changedTouches[0];
+                    // Tap -> Tooltip (Backup for touch)
+                    if (Date.now() - this.touchStartTime < 300 && Math.abs(touch.clientX - this.touchStartX) < 10) {
+                        const rect = el.getBoundingClientRect();
+                        this.showTooltip(i.getTooltipHTML(), rect.right, rect.top);
+                    } else {
+                        // Drag Drop (Touch) - Check if dropped on inventory
+                        const target = document.elementFromPoint(touch.clientX, touch.clientY);
+                        if (target && target.closest('#inventory-grid')) {
+                            // Unequip
+                            if (this.inventory.length < 20) {
+                                this.equipment[k] = null;
+                                this.inventory.push(i);
+                                this.renderEquipment();
+                                this.renderInventory();
+                            } else {
+                                alert("인벤토리가 꽉 찼습니다.");
+                            }
+                        }
+                    }
+                    this.draggingEquipKey = null;
+                };
+
+                div.appendChild(el);
+            }
+        });
     }
 
     updateDPS() {
@@ -1322,8 +1546,7 @@ class Game {
         ['weapon1', 'weapon2', 'ring1', 'ring2'].forEach(k => { if (this.equipment[k]) weaponBase += this.equipment[k].baseDamage; });
         const avgBase = 15 + this.char.baseDmg + weaponBase + s.flatDamage; // 15 is avg of 10~20 rand
         const avgTotal = avgBase * (1 + s.incDmg / 100);
-        const chance = Math.min(100, Math.max(0, s.critChance)) / 100;
-        const critFactor = chance * (s.critMulti / 100) + 1 - chance;
+        const critFactor = (s.critChance / 100) * (s.critMulti / 100) + (1 - Math.min(s.critChance, 100) / 100);
         // Demon Jackpot Average: 1% * 50M = 500,000? No, let's stick to standard DPS.
         // The user asked for "5 clicks average".
         const avgHit = avgTotal * critFactor;
@@ -1342,98 +1565,44 @@ class Game {
     updateUI() {
         document.getElementById('score').textContent = this.damage.toLocaleString();
         this.updateDPS();
-        this.spawnSkeletons(this.calculateStats().skeletonCount);
     }
     playPunchAnim() { this.sandbag.classList.remove('hit'); void this.sandbag.offsetWidth; this.sandbag.classList.add('hit'); playSound('hit'); }
     showDamageNumber(x, y, v, c, color) {
-        if (x == null || y == null) {
-            const rect = this.sandbag.getBoundingClientRect();
-            x = rect.left + rect.width / 2; y = rect.top + rect.height / 2;
-        }
         const el = document.createElement('div'); el.className = `damage-text ${c ? 'crit' : ''}`; el.textContent = v.toLocaleString();
         el.style.left = (x + (Math.random() - 0.5) * 40) + 'px'; el.style.top = (y - 50) + 'px';
         if (color) el.style.color = color;
         document.body.appendChild(el); setTimeout(() => el.remove(), 800);
     }
-    showProjectiles(c, x, y) {
-        if (x == null || y == null) {
-            const rect = this.sandbag.getBoundingClientRect();
-            x = rect.left + rect.width / 2;
-            y = rect.top + rect.height / 2;
-        }
-        for (let i = 0; i < c; i++) {
-            const d = document.createElement('div');
-            d.style.cssText = `position:absolute;width:5px;height:5px;background:#0ff;border-radius:50%;left:${x}px;top:${y}px;transition:0.5s;pointer-events:none;`;
-            document.body.appendChild(d);
-            requestAnimationFrame(() => {
-                d.style.transform = `translate(${Math.cos(Math.random() * 6) * 100}px,${Math.sin(Math.random() * 6) * 100}px)`;
-                d.style.opacity = 0;
-            });
-            setTimeout(() => d.remove(), 500);
-        }
-    }
+    showProjectiles(c, x, y) { for (let i = 0; i < c; i++) { const d = document.createElement('div'); d.style.cssText = `position:absolute;width:5px;height:5px;background:#0ff;border-radius:50%;left:${x}px;top:${y}px;transition:0.5s;pointer-events:none;`; document.body.appendChild(d); requestAnimationFrame(() => { d.style.transform = `translate(${Math.cos(Math.random() * 6) * 100}px,${Math.sin(Math.random() * 6) * 100}px)`; d.style.opacity = 0; }); setTimeout(() => d.remove(), 500); } }
     // --- New Features Logic ---
 
     // 1. Save/Load
-    saveGame(silent = false) {
-        if (!this.autoSaveEnabled) return;
+    saveGame() {
         const data = {
             char: this.char,
             sandbagLevel: this.sandbagLevel,
             gold: this.gold,
-            damage: this.damage,
-            drops: this.drops,
-            refinerySlots: this.refinerySlots,
-            refineryResult: this.refineryResult,
             inventory: this.inventory,
             equipment: this.equipment,
-            filters: Array.from(document.querySelectorAll('#loot-filter input')).map(cb => ({ k: cb.dataset.filter, v: cb.checked })),
-            isBossBattle: this.isBossBattle
+            filters: Array.from(document.querySelectorAll('#loot-filter input')).map(cb => ({ k: cb.dataset.filter, v: cb.checked }))
         };
         try {
             localStorage.setItem(this.storageKey, JSON.stringify(data));
-            if (!silent) alert("저장되었습니다!");
-        } catch (e) {
-            if (!silent) alert("저장 실패 (Local Storage 오류)");
-        }
+            alert("저장되었습니다!");
+        } catch (e) { alert("저장 실패 (Local Storage 오류)"); }
     }
 
-    loadGame(silent = false) {
-        let str;
-        try { str = localStorage.getItem(this.storageKey); } catch { return false; }
-        if (!str) {
-            if (!silent) alert("저장된 데이터가 없습니다.");
-            return false;
-        }
+    loadGame() {
+        const str = localStorage.getItem(this.storageKey);
+        if (!str) return alert("저장된 데이터가 없습니다.");
         try {
             const data = JSON.parse(str);
-            const finite = value => typeof value === 'number' && Number.isFinite(value) && value >= 0;
-            const validItem = item => item === null || (item && ['weapon', 'ring'].includes(item.type)
-                && typeof item.name === 'string' && typeof item.icon === 'string'
-                && finite(item.level) && finite(item.baseDamage) && Array.isArray(item.affixes)
-                && item.affixes.every(a => typeof a.stat === 'string' && Number.isFinite(a.value)));
-            if (!data || !data.char || !finite(data.char.level) || !finite(data.char.xp)
-                || !finite(data.char.maxXp) || data.char.maxXp < 1 || !finite(data.char.baseDmg)
-                || !finite(data.sandbagLevel) || data.sandbagLevel < 1 || data.sandbagLevel > 1000000
-                || !Array.isArray(data.inventory)
-                || !data.inventory.every(i => i && validItem(i))
-                || !data.equipment || !['weapon1', 'weapon2', 'ring1', 'ring2'].every(k => validItem(data.equipment[k]))
-                || (data.drops && (!Array.isArray(data.drops) || !data.drops.every(i => i && validItem(i))))
-                || (data.refinerySlots && ![1, 2].every(k => validItem(data.refinerySlots[k])))
-                || (data.refineryResult && !validItem(data.refineryResult))) {
-                throw new Error('Invalid save data');
-            }
-            if (data.char) {
-                Object.assign(this.char, data.char);
-                document.getElementById('char-level').textContent = `Lv.${this.char.level}`;
-                document.getElementById('xp-bar').style.width = this.char.xp / this.char.maxXp * 100 + '%';
-            }
-            if (typeof data.isBossBattle === 'boolean') this.isBossBattle = data.isBossBattle;
-            if (data.sandbagLevel) {
-                this.sandbagLevel = data.sandbagLevel;
-                this.changeSandbagLevel(0);
-            }
+            // Validations
+            if (data.char) { Object.assign(this.char, data.char); document.getElementById('char-level').textContent = `Lv.${this.char.level}`; document.getElementById('xp-bar').style.width = this.char.xp / this.char.maxXp * 100 + '%'; }
+            if (data.sandbagLevel) { this.sandbagLevel = data.sandbagLevel; this.changeSandbagLevel(0); }
+            if (data.gold) { this.gold = data.gold; this.updateGoldUI(); }
 
+            // Rehydrate Items
             const hydrate = (i) => {
                 if (!i) return null;
                 const item = new Item(i.type);
@@ -1441,7 +1610,7 @@ class Game {
                 return item;
             };
 
-            if (data.inventory) this.inventory = data.inventory.map(hydrate);
+            if (data.inventory) { this.inventory = data.inventory.map(hydrate); this.renderInventory(); }
             if (data.equipment) {
                 this.equipment = {
                     weapon1: hydrate(data.equipment.weapon1),
@@ -1449,27 +1618,19 @@ class Game {
                     ring1: hydrate(data.equipment.ring1),
                     ring2: hydrate(data.equipment.ring2)
                 };
+                this.renderEquipment();
             }
-            if (Array.isArray(data.filters)) {
+            if (data.filters) {
                 data.filters.forEach(f => {
-                    const cb = Array.from(document.querySelectorAll('#loot-filter input')).find(cb => cb.dataset.filter === f.k);
+                    const cb = document.querySelector(`#loot-filter input[data-filter="${f.k}"]`);
                     if (cb) cb.checked = f.v;
                 });
             }
-            this.damage = Number.isFinite(data.damage) ? data.damage : 0;
-            this.drops = (data.drops || []).map(hydrate);
-            this.refinerySlots = { 1: hydrate(data.refinerySlots?.[1]), 2: hydrate(data.refinerySlots?.[2]) };
-            this.refineryResult = hydrate(data.refineryResult);
-            this.refreshDerivedState();
-            this.updateRefineryUI();
-            if (!silent) alert("불러오기 완료!");
-            return true;
+            this.renderDrops(); // Refresh filter
+            alert("불러오기 완료!");
         } catch (e) {
             console.error(e);
-            this.saveLoadFailed = true;
-            this.autoSaveEnabled = false;
-            alert("저장 데이터를 읽지 못했습니다. 기존 저장 보호를 위해 자동 저장을 멈췄습니다.");
-            return false;
+            alert("세이브 파일이 손상되었습니다.");
         }
     }
 
@@ -1477,16 +1638,14 @@ class Game {
     continueGame() {
         document.getElementById('victory-overlay').classList.add('hidden');
         this.gameRunning = true;
-        this.isBossBattle = false;
+        // Do not reset sandbag level
         if (this.poisonInterval) clearInterval(this.poisonInterval);
         if (this.skelInterval) clearInterval(this.skelInterval);
-        this.poisonInstances = [];
         this.poisonInterval = setInterval(() => this.tickPoison(), 1000);
         this.skelInterval = setInterval(() => this.skeletonShoot(), 1000);
-        this.changeSandbagLevel(0);
+        this.sandbagHp = this.sandbagMaxHp;
         this.sandbag.classList.remove('dead');
         this.updateHpBar();
-        this.refreshDerivedState();
     }
 
     // 3. Info Popups
@@ -1515,7 +1674,9 @@ class Game {
     }
 
     showInvInfo() {
-        const text = '아이템을 누르면 장착, 제련 재료 선택, 삭제 메뉴가 열립니다. 삭제는 확인 후 실행되며, 드랍은 자동으로 목록에 모이며, 마우스를 올리거나 탭하면 옵션을 확인할 수 있습니다.';
+        const text = `아이템을 쓰레기통 쪽으로 드레그하면 아이템이 인벤에서 제거됩니다.
+G키를 누르면 아이템이 나오는대신 센드백 레벨에 따른 소량의 골드를 얻습니다.
+상점에서는 현재 센드백레벨과 같은 아이템을 구매하실수 있습니다.`;
         this.showGenericModal("인벤토리 도움말", text);
     }
 
@@ -1527,10 +1688,11 @@ E는 세줄짜리옵션
 L은 네줄짜리옵션 혹은 유니크아이템만 보이게 합니다.`;
         this.showGenericModal("드랍 및 필터", text);
     }
+
     showIntroInfo() {
         const text = `센드백 키우기에 오신 것을 환영합니다!
 
-샌드백 레벨이 높을수록 드랍 장비의 기본 공격력이 증가합니다.
+센드백 레벨이 높을수록 드랍되는 템의 데미지와 골드량이 증가합니다.
 드랍되는템에는 옵션이 1~4줄로 랜덤하게 붙습니다.
 1줄은 파랑, 2줄은 노랑, 3줄은 보라, 4줄은 주황으로 표현됩니다.
 
@@ -1567,114 +1729,11 @@ L은 네줄짜리옵션 혹은 유니크아이템만 보이게 합니다.`;
         this.drops.push(item);
         playSound('drop_unique');
         this.renderDrops();
-        this.setActivePanel('drops');
-    }
-    toggleRefineryMode(active) {
-        const panel = document.getElementById('refinery-panel');
-        if (active) {
-            document.body.classList.add('refinery-mode');
-            panel.classList.remove('hidden');
-            this.updateRefineryUI();
-        } else {
-            document.body.classList.remove('refinery-mode');
-            panel.classList.add('hidden');
-        }
-    }
-
-    setRefinerySlot(id, item) {
-        if (![1, 2].includes(Number(id))) return;
-        this.refinerySlots[id] = item;
-        this.updateRefineryUI();
-    }
-
-    updateRefineryUI() {
-        [1, 2].forEach(id => {
-            const el = document.getElementById(`refine-slot-${id}`);
-            const item = this.refinerySlots[id];
-            el.innerHTML = item ? `${item.icon}<div style="font-size:0.6rem;">Lv.${item.level}</div>` : (id === 1 ? 'Main' : 'Sub');
-            el.className = `refinery-slot ${item ? 'active' : ''} ${item ? item.rarity : ''}`;
-            if (item) el.setAttribute('data-tooltip-html', item.getTooltipHTML());
-            if (item) el.setAttribute('data-tooltip-html', item.getTooltipHTML());
-            else el.removeAttribute('data-tooltip-html');
-        });
-
-        // Result Slot UI
-        const resEl = document.getElementById('refine-slot-result');
-        if (this.refineryResult) {
-            const r = this.refineryResult;
-            resEl.innerHTML = `${r.icon}<div style="font-size:0.6rem;">Lv.${r.level}</div>`;
-            resEl.className = `refinery-slot result ${r.rarity} active`;
-            resEl.setAttribute('data-tooltip-html', r.getTooltipHTML());
-        } else {
-            resEl.innerHTML = '?';
-            resEl.className = 'refinery-slot result';
-            resEl.removeAttribute('data-tooltip-html');
-        }
-
-        // Check Fuse Button
-        const btn = document.getElementById('btn-fuse');
-        const i1 = this.refinerySlots[1];
-        const i2 = this.refinerySlots[2];
-
-        if (this.refineryResult) {
-            btn.disabled = true;
-            btn.textContent = '결과물 수령 필요';
-            return;
-        }
-
-        if (i1 && i2 && i1.type === i2.type) {
-            btn.disabled = false;
-            btn.textContent = `합성 하기 (${i1.type === 'weapon' ? '무기' : '반지'})`;
-        } else {
-            btn.disabled = true;
-            btn.textContent = '합성 불가 (같은 종류 필요)';
-        }
-    }
-
-    fuseItems() {
-        const i1 = this.refinerySlots[1];
-        const i2 = this.refinerySlots[2];
-        if (this.refineryResult || !i1 || !i2 || i1.type !== i2.type) return;
-
-        const newItem = new Item(i1.type);
-        newItem.level = Math.max(i1.level, i2.level);
-        newItem.baseDamage = newItem.level * 3;
-
-        const poolP = [...i1.affixes.filter(a => a.type === 'prefix'), ...i2.affixes.filter(a => a.type === 'prefix')];
-        const poolS = [...i1.affixes.filter(a => a.type === 'suffix'), ...i2.affixes.filter(a => a.type === 'suffix')];
-
-        const pick = (arr, n) => arr.sort(() => 0.5 - Math.random()).slice(0, n);
-
-        const finalP = pick(poolP, Math.ceil(poolP.length / 2));
-        const finalS = pick(poolS, Math.ceil(poolS.length / 2));
-
-        newItem.affixes = [...finalP, ...finalS];
-        const totalAffix = newItem.affixes.length;
-        newItem.rarity = totalAffix >= 4 ? 'legendary' : totalAffix === 3 ? 'epic' : totalAffix === 2 ? 'rare' : 'magic';
-        newItem.generateName();
-
-        this.refinerySlots = { 1: null, 2: null };
-        this.refineryResult = newItem;
-
-        this.updateRefineryUI();
-        this.autoSave(true);
-        playSound('upgrade_success');
-    }
-
-    claimRefineryResult() {
-        if (!this.refineryResult) return;
-
-
-        this.inventory.push(this.refineryResult);
-        this.refineryResult = null;
-        this.renderInventory();
-        this.updateRefineryUI();
-        this.autoSave(true);
     }
 }
 
 window.addEventListener('DOMContentLoaded', () => {
     log('DOM Loaded. Creating Game...');
-    try { window.game = new Game(); } catch (e) { log('Game Init Failed: ' + e.message); alert('Game Error: ' + e.message); }
+    try { new Game(); } catch (e) { log('Game Init Failed: ' + e.message); }
 });
 log('Script EOF Reached');
